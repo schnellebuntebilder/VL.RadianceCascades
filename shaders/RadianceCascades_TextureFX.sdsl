@@ -1,0 +1,94 @@
+[TextureSource]
+
+shader RadianceCascades_TextureFX : TextureFX
+{
+    // Texture0: Scene RGBA - RGB = emissive color, A = opacity
+    // Opaque pixels (A > Threshold) are treated as light emitters
+
+    float2 R = ViewSize;
+
+    int NumDirections = 32;
+    int NumCascades = 3;
+    int StepsPerCascade = 16;
+    float MaxDistance = 0.5;
+    float Threshold = 0.01;
+
+    #define TAU 6.28318530718
+
+    // Calculate the ray interval [start, end] for a cascade level
+    // Intervals grow by 4x per level: [0,1], [1,4], [4,16], ... normalized to MaxDistance
+    float2 CascadeRange(int index, int count)
+    {
+        float maxVal = float((1 << (count * 2)) - 1);
+        float s = float((1 << (index * 2)) - 1);
+        float e = float((1 << (index * 2 + 2)) - 1);
+        return float2(s, e) / maxVal * MaxDistance;
+    }
+
+    // Trace a ray through one cascade interval using fixed-step alpha testing
+    // Returns float4(rgb, visibility) where visibility: 0 = hit, 1 = miss
+    float4 TraceInterval(float2 origin, float2 dir, float tMin, float tMax, float aspectY)
+    {
+        float stepSize = (tMax - tMin) / float(StepsPerCascade);
+        float t = tMin;
+
+        for (int i = 0; i < StepsPerCascade; i++)
+        {
+            float2 p = origin + t * dir * float2(1, aspectY) + 0.5;
+
+            if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1)
+                return float4(0, 0, 0, 1);
+
+            float4 s = Texture0.SampleLevel(Sampler0, p, 0);
+
+            if (s.a > Threshold)
+                return float4(s.rgb, 0);
+
+            t += stepSize;
+        }
+
+        return float4(0, 0, 0, 1);
+    }
+
+    stage override float4 Shading()
+    {
+        float2 uv = streams.TexCoord - 0.5;
+        float aspectY = R.x / R.y;
+        float3 col = 0;
+
+        // Small offset to avoid self-intersection
+        float minT = 1.5 / R.x;
+
+        for (int d = 0; d < NumDirections; d++)
+        {
+            float angle = (float(d) + 0.5) / float(NumDirections) * TAU;
+            float2 rd = float2(cos(angle), sin(angle));
+
+            float3 radiance = 0;
+
+            // March through cascade intervals from near to far
+            for (int c = 0; c < NumCascades; c++)
+            {
+                float2 range = CascadeRange(c, NumCascades);
+                float tMin = max(range.x, minT);
+                float4 result = TraceInterval(uv, rd, tMin, range.y, aspectY);
+
+                if (result.a < 0.5)
+                {
+                    radiance = result.rgb;
+                    break;
+                }
+            }
+
+            col += radiance;
+        }
+
+        col /= float(NumDirections);
+
+        // Blend with direct emissive color
+        float4 self = Texture0.SampleLevel(Sampler0, streams.TexCoord, 0);
+        col = lerp(col, self.rgb, self.a);
+
+        return saturate(float4(col, 1.0));
+    }
+};
