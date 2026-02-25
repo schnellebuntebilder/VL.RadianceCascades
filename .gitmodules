@@ -1,0 +1,8 @@
+[submodule "radiance cascades/UnityURP-RadianceCascades2DGI"]
+	path = radiance cascades/UnityURP-RadianceCascades2DGI
+	url = git@github.com:Youssef-Afella/UnityURP-RadianceCascades2DGI.git
+	branch = main
+[submodule "radiance cascades/RadianceCascadesPaper"]
+	path = radiance cascades/RadianceCascadesPaper
+	url = git@github.com:Raikiri/RadianceCascadesPaper.git
+	branch = main
