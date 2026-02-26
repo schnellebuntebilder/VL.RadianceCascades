@@ -35,7 +35,7 @@ shader JFAStep_TextureFX : TextureFX
                 float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
 
                 float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
-                if (peek.x > 0.0 || peek.y > 0.0)
+                if (peek.x > 0.001 && peek.y > 0.001)
                 {
                     float2 dir = peek - uv;
                     float dist = dot(dir, dir);
