@@ -1,5 +1,4 @@
 [TextureSource]
-[WantsMips("Texture0")]
 
 shader RadianceCascades_TextureFX : TextureFX
 {
@@ -8,20 +7,37 @@ shader RadianceCascades_TextureFX : TextureFX
 
     float2 R = ViewSize;
 
-    int NumDirections = 64;
-    int MarchSteps = 64;
-    float MaxDistance = 0.5;
+    int NumDirections = 32;
+    int MarchSteps = 16;
+    int NumCascades = 4;
+    float MaxDistance = 1.0;
     float SDFScale = 1.0;
     float Exposure = 1.0;
-    float BlendWidth = 0.1;
+    float BlendWidth = 1.0;
     float RayOffset = 2.0;
-    float MipScale = 0.25;
 
     #define TAU 6.28318530718
 
     float hash(float2 p)
     {
         return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    // Snap UV to a coarse probe grid. Neighboring pixels that fall in
+    // the same cell share the same probe origin → smooth far-field.
+    float2 SnapToGrid(float2 uv, float cellPixels)
+    {
+        float2 cell = cellPixels / R;
+        return (floor(uv / cell) + 0.5) * cell;
+    }
+
+    // Calculate cascade interval [start, end] — intervals grow by 4× per level
+    float2 CascadeRange(int index)
+    {
+        float maxVal = float((1 << (NumCascades * 2)) - 1);
+        float s = float((1 << (index * 2)) - 1);
+        float e = float((1 << (index * 2 + 2)) - 1);
+        return float2(s, e) / maxVal * MaxDistance;
     }
 
     stage override float4 Shading()
@@ -42,46 +58,61 @@ shader RadianceCascades_TextureFX : TextureFX
             float angle = (float(d) + 0.5) / float(NumDirections) * TAU + jitter;
             float2 rd = normalize(float2(cos(angle) / aspect, sin(angle)));
 
-            float t = hitThreshold * RayOffset;
+            float3 radiance = 0;
+            float visibility = 1.0;
 
-            for (int s = 0; s < MarchSteps; s++)
+            for (int c = 0; c < NumCascades; c++)
             {
-                float2 p = uv + t * rd;
+                float2 range = CascadeRange(c);
 
-                if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
-                    break;
+                // Upper cascades use a coarser spatial grid — this is the
+                // core radiance cascades idea: far light is sampled at low
+                // spatial resolution and naturally interpolates smoothly.
+                float cellSize = float(1 << c);
+                float2 probeUV = c == 0 ? uv : SnapToGrid(uv, cellSize, R);
 
-                float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
+                float t = max(range.x, hitThreshold * RayOffset);
 
-                if (sdf <= hitThreshold)
+                for (int s = 0; s < MarchSteps; s++)
                 {
-                    // Mip level scales with distance for smooth far-field.
-                    // MipScale controls the tradeoff: higher = smoother but
-                    // may bleed light through thin occluders.
-                    float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
-                    totalRadiance += Texture0.SampleLevel(Sampler0, p, mip).rgb;
-                    break;
+                    float2 p = probeUV + t * rd;
+
+                    if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
+                        break;
+
+                    float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
+
+                    if (sdf <= hitThreshold)
+                    {
+                        // Always sample color at mip 0 — no bleed through occluders
+                        radiance += visibility * Texture0.SampleLevel(Sampler0, p, 0).rgb;
+                        visibility = 0.0;
+                        break;
+                    }
+
+                    t += sdf;
+
+                    if (t >= range.y)
+                        break;
                 }
 
-                t += sdf;
-
-                if (t >= MaxDistance)
+                if (visibility == 0.0)
                     break;
             }
+
+            totalRadiance += radiance;
         }
 
         totalRadiance /= float(NumDirections);
         totalRadiance *= TAU;
 
-        // Approach 1: Blend direct emissive using SDF distance
+        // Blend direct emissive near surfaces
         float3 selfColor = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
         float blend = saturate(1.0 - originSDF * max(R.x, R.y) * BlendWidth);
         totalRadiance = lerp(totalRadiance, selfColor * TAU, blend);
-
-        // Approach 2: Ensure no black gap — near emitters, enforce minimum
         totalRadiance = max(totalRadiance, selfColor * TAU * blend * blend);
 
-        // Tonemapping (matches shadertoy reference)
+        // Tonemapping
         totalRadiance *= Exposure;
         float3 mapped = 1.0 - 1.0 / pow(1.0 + totalRadiance, 2.5);
 
