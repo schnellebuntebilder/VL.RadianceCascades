@@ -102,22 +102,23 @@ shader RCCascade_TextureFX : TextureFX
         // Decode pixel position into probe index + direction index
         // Layout: texture is divided into a grid of directional blocks.
         // Total directions at this level: NumBaseDirections * 4^CascadeLevel
+        float2 res = R;
         int nDirs = NumBaseDirections * (1 << (CascadeLevel * 2));
         int blockSqrt = 1 << CascadeLevel;
-        float aspect = R.x / R.y;
-        float pixelSize = 1.0 / max(R.x, R.y);
+        float aspect = res.x / res.y;
+        float pixelSize = 1.0 / max(res.x, res.y);
 
-        float2 pixelIndex = floor(streams.TexCoord * R);
+        float2 pixelIndex = floor(streams.TexCoord * res);
 
         // Block layout: blockSqrt × blockSqrt blocks tile the texture
-        float2 blockDim = R / float(blockSqrt);
+        float2 blockDim = res / float(blockSqrt);
         float2 block2D = floor(pixelIndex / blockDim);
         float blockIndex = block2D.x + block2D.y * float(blockSqrt);
 
         // Probe position within block = spatial coordinate of this probe
         float2 probeCoord = fmod(pixelIndex, blockDim);
         // Probe position in UV space (accounting for coarser grid)
-        float2 probeUV = (probeCoord + 0.5) * float(blockSqrt) / R;
+        float2 probeUV = (probeCoord + 0.5) * float(blockSqrt) / res;
 
         float2 range = CascadeRange(CascadeLevel);
 
@@ -154,10 +155,10 @@ shader RCCascade_TextureFX : TextureFX
                 float2 bpi = floor(bpf);
                 float2 bw = bpf - bpi;
 
-                float2 uv00 = (base + clamp(bpi + float2(0, 0), 0.5, parentBlockDim - 0.5) + 0.5) / R;
-                float2 uv10 = (base + clamp(bpi + float2(1, 0), 0.5, parentBlockDim - 0.5) + 0.5) / R;
-                float2 uv01 = (base + clamp(bpi + float2(0, 1), 0.5, parentBlockDim - 0.5) + 0.5) / R;
-                float2 uv11 = (base + clamp(bpi + float2(1, 1), 0.5, parentBlockDim - 0.5) + 0.5) / R;
+                float2 uv00 = (base + clamp(bpi + float2(0, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+                float2 uv10 = (base + clamp(bpi + float2(1, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+                float2 uv01 = (base + clamp(bpi + float2(0, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+                float2 uv11 = (base + clamp(bpi + float2(1, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
 
                 float4 s00 = Texture2.SampleLevel(Sampler1, uv00, 0);
                 float4 s10 = Texture2.SampleLevel(Sampler1, uv10, 0);
