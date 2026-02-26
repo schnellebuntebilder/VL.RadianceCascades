@@ -1,4 +1,5 @@
 [TextureSource]
+[WantsMips("Texture0")]
 
 shader RadianceCascades_TextureFX : TextureFX
 {
@@ -15,6 +16,7 @@ shader RadianceCascades_TextureFX : TextureFX
     float Exposure = 1.0;
     float BlendWidth = 1.0;
     float RayOffset = 2.0;
+    float MipScale = 0.25;
 
     #define TAU 6.28318530718
 
@@ -84,8 +86,8 @@ shader RadianceCascades_TextureFX : TextureFX
 
                     if (sdf <= hitThreshold)
                     {
-                        // Always sample color at mip 0 — no bleed through occluders
-                        radiance += visibility * Texture0.SampleLevel(Sampler0, p, 0).rgb;
+                        float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
+                        radiance += visibility * Texture0.SampleLevel(Sampler0, p, mip).rgb;
                         visibility = 0.0;
                         break;
                     }
