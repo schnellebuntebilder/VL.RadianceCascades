@@ -152,13 +152,16 @@ shader RCCascade_TextureFX : TextureFX
                 float2 pi = floor(pf);
                 float2 w = pf - pi;
 
-                float2 h = float2(1, 0);
                 float2 base = parentBlock2D * parentBlockDim;
+                float2 off00 = float2(0, 0);
+                float2 off10 = float2(1, 0);
+                float2 off01 = float2(0, 1);
+                float2 off11 = float2(1, 1);
 
-                float4 s00 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.yy, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
-                float4 s10 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.xy, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
-                float4 s01 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.yx, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
-                float4 s11 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.xx, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s00 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off00, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s10 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off10, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s01 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off01, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s11 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off11, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
 
                 float4 parent = lerp(lerp(s00, s10, w.x), lerp(s01, s11, w.x), w.y);
 
