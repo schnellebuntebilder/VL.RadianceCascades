@@ -34,12 +34,7 @@ shader JFAStep_TextureFX : TextureFX
             {
                 float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
 
-                // Treat out-of-bounds as no seed (avoid wrap-around)
-                float2 peek = float2(0, 0);
-                if (peekUV.x >= 0.0 && peekUV.x <= 1.0 && peekUV.y >= 0.0 && peekUV.y <= 1.0)
-                {
-                    peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
-                }
+                float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
                 if (peek.x > 0.0 || peek.y > 0.0)
                 {
                     float2 dir = peek - uv;
