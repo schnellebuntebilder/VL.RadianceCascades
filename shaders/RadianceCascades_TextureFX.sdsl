@@ -15,6 +15,11 @@ shader RadianceCascades_TextureFX : TextureFX
 
     #define TAU 6.28318530718
 
+    float hash(float2 p)
+    {
+        return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    }
+
     stage override float4 Shading()
     {
         float2 uv = streams.TexCoord;
@@ -24,11 +29,14 @@ shader RadianceCascades_TextureFX : TextureFX
 
         float originSDF = Texture1.SampleLevel(Sampler0, uv, 0).r * SDFScale;
 
+        // Per-pixel random angular offset breaks coherent ray patterns into smooth noise
+        float jitter = hash(uv * R) * TAU;
+
         float3 totalRadiance = 0;
 
         for (int d = 0; d < NumDirections; d++)
         {
-            float angle = (float(d) + 0.5) / float(NumDirections) * TAU;
+            float angle = (float(d) + 0.5) / float(NumDirections) * TAU + jitter;
             // Aspect-corrected direction, normalized in UV space
             float2 rd = normalize(float2(cos(angle) / aspect, sin(angle)));
 
