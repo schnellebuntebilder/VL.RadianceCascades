@@ -1,4 +1,5 @@
 [TextureSource]
+[WantsMips("Texture0")]
 
 shader RCCascader_TextureFX : TextureFX
 {
@@ -28,6 +29,7 @@ shader RCCascader_TextureFX : TextureFX
     float SDFScale = 1.0;
     float RayOffset = 2.0;
     float SmoothScale = 4.0;
+    float MipScale = 0.25;
 
     #define TAU 6.28318530718
 
@@ -79,7 +81,8 @@ shader RCCascader_TextureFX : TextureFX
 
             if (t > tStart + pixelSize && sdf < 1.0 * pixelSize)
             {
-                float3 hitColor = Texture0.SampleLevel(Sampler0, p, 0).rgb;
+                float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
+                float3 hitColor = Texture0.SampleLevel(Sampler0, p, mip).rgb;
 
                 float fadeIn = saturate((t - tMin) / max(sMin, pixelSize));
                 float fadeOut = saturate((tMax - t) / max(sMax, pixelSize));
@@ -136,35 +139,30 @@ shader RCCascader_TextureFX : TextureFX
             if (interval.a != 0.0 && CascadeLevel < NumCascades - 1)
             {
                 // Merge with parent cascade via bilinear interpolation
-                // Parent has half the spatial resolution — find 4 nearest probes
+                // Match Shadertoy: pf = (p + 0.5) / 2.0, q = round(pf) - 1
                 float2 parentBlockDim = blockDim * 0.5;
-                float2 parentPos = probeCoord * 0.5;
-                // Parent direction index for this sub-direction
-                float parentDirBlock = float(dirIndex);
                 float parentBlockSqrt = float(blockSqrt * 2);
 
-                float2 parentBlock2D = float2(
-                    fmod(parentDirBlock, parentBlockSqrt),
-                    floor(parentDirBlock / parentBlockSqrt)
-                );
+                float2 pf = (probeCoord + 0.5) * 0.5;
+                float2 qi = floor(pf + 0.5) - 1.0;
+                float2 bw = pf - qi - 0.5;
 
-                // Bilinear: sample 4 nearest parent probes
-                float2 baseValue = parentBlock2D * parentBlockDim;
+                float2 blockStart = float2(
+                    fmod(float(dirIndex), parentBlockSqrt),
+                    floor(float(dirIndex) / parentBlockSqrt)
+                ) * parentBlockDim;
 
-                float2 bpf = parentPos - 0.5;
-                float2 bpi = floor(bpf);
-                float2 bw = bpf - bpi;
+                // Clamp probe indices to valid range within parent block
+                float2 q00 = clamp(qi,              0, parentBlockDim - 1);
+                float2 q10 = clamp(qi + float2(1,0), 0, parentBlockDim - 1);
+                float2 q01 = clamp(qi + float2(0,1), 0, parentBlockDim - 1);
+                float2 q11 = clamp(qi + float2(1,1), 0, parentBlockDim - 1);
 
-
-                float2 uv00 = (baseValue + clamp(bpi + float2(0, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-                float2 uv10 = (baseValue + clamp(bpi + float2(1, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-                float2 uv01 = (baseValue + clamp(bpi + float2(0, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-                float2 uv11 = (baseValue + clamp(bpi + float2(1, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-
-                float4 s00 = Texture2.SampleLevel(Sampler1, uv00, 0);
-                float4 s10 = Texture2.SampleLevel(Sampler1, uv10, 0);
-                float4 s01 = Texture2.SampleLevel(Sampler1, uv01, 0);
-                float4 s11 = Texture2.SampleLevel(Sampler1, uv11, 0);
+                // Use Sampler0 (point) to avoid cross-block bleeding
+                float4 s00 = Texture2.SampleLevel(Sampler0, (blockStart + q00 + 0.5) / res, 0);
+                float4 s10 = Texture2.SampleLevel(Sampler0, (blockStart + q10 + 0.5) / res, 0);
+                float4 s01 = Texture2.SampleLevel(Sampler0, (blockStart + q01 + 0.5) / res, 0);
+                float4 s11 = Texture2.SampleLevel(Sampler0, (blockStart + q11 + 0.5) / res, 0);
 
                 float4 parent = lerp(lerp(s00, s10, bw.x), lerp(s01, s11, bw.x), bw.y);
 
