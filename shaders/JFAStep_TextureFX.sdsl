@@ -26,23 +26,24 @@ shader JFAStep_TextureFX : TextureFX
         float minDist = 1.0;
         float2 minDistUV = float2(0, 0);
 
-        [unroll]
         for (int y = -1; y <= 1; y++)
         {
-            [unroll]
             for (int x = -1; x <= 1; x++)
             {
                 float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
 
-                float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
-                if (any(peek))
+                if (peekUV.x >= 0.0 && peekUV.x <= 1.0 && peekUV.y >= 0.0 && peekUV.y <= 1.0)
                 {
-                    float2 dir = peek - uv;
-                    float dist = dot(dir, dir);
-                    if (dist < minDist)
+                    float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
+                    if (any(peek))
                     {
-                        minDist = dist;
-                        minDistUV = peek;
+                        float2 dir = peek - uv;
+                        float dist = dot(dir, dir);
+                        if (dist < minDist)
+                        {
+                            minDist = dist;
+                            minDistUV = peek;
+                        }
                     }
                 }
             }
