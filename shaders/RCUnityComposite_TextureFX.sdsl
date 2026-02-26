@@ -3,41 +3,47 @@
 shader RCUnityComposite_TextureFX : TextureFX
 {
     // Final compositing pass for Unity-style radiance cascades.
-    // Matches Unity Blitter.shader + tonemapping.
     //
     // Texture0: Scene RGBA (RGB = emissive color)
     // Texture1: Cascade 0 output (from RCUnity at level 0)
-
-    SamplerState ClampPointSampler
-    {
-        Filter = MIN_MAG_MIP_POINT;
-        AddressU = Clamp;
-        AddressV = Clamp;
-    };
-    SamplerState ClampLinearSampler
-    {
-        Filter = MIN_MAG_MIP_LINEAR;
-        AddressU = Clamp;
-        AddressV = Clamp;
-    };
 
     float2 R = ViewSize;
     float Exposure = 1.0;
 
     #define TAU 6.28318530718
 
+    // Manual bilinear with clamped point samples to avoid Wrap bleed
+    float4 SampleBilinearClamped(Texture2D tex, float2 uv)
+    {
+        float2 texelSize = 1.0 / R;
+        float2 texelPos = uv * R - 0.5;
+        float2 f = frac(texelPos);
+        float2 baseUV = (floor(texelPos) + 0.5) * texelSize;
+
+        float2 minUV = 0.5 * texelSize;
+        float2 maxUV = 1.0 - 0.5 * texelSize;
+
+        float4 s00 = tex.SampleLevel(Sampler0, clamp(baseUV, minUV, maxUV), 0);
+        float4 s10 = tex.SampleLevel(Sampler0, clamp(baseUV + float2(texelSize.x, 0), minUV, maxUV), 0);
+        float4 s01 = tex.SampleLevel(Sampler0, clamp(baseUV + float2(0, texelSize.y), minUV, maxUV), 0);
+        float4 s11 = tex.SampleLevel(Sampler0, clamp(baseUV + texelSize, minUV, maxUV), 0);
+
+        return lerp(lerp(s00, s10, f.x), lerp(s01, s11, f.x), f.y);
+    }
+
     stage override float4 Shading()
     {
         float2 uv = streams.TexCoord;
 
-        // Cascade 0 has blockSqrt=1, so full spatial resolution — sample with bilinear
-        float3 gi = Texture1.SampleLevel(ClampLinearSampler, uv, 0).rgb;
+        // Cascade 0 has blockSqrt=1, so full spatial resolution
+        float3 gi = SampleBilinearClamped(Texture1, uv).rgb;
 
         // Scale by TAU (full circle integration normalization)
         gi *= TAU;
 
         // Add direct emissive
-        float3 scene = Texture0.SampleLevel(ClampPointSampler, uv, 0).rgb;
+        float2 clampedUV = clamp(uv, 0.5 / R, 1.0 - 0.5 / R);
+        float3 scene = Texture0.SampleLevel(Sampler0, clampedUV, 0).rgb;
         float3 color = scene + gi;
 
         // Tonemapping + exposure

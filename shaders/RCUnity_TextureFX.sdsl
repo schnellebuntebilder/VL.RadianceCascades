@@ -4,31 +4,9 @@ shader RCUnity_TextureFX : TextureFX
 {
     // Multi-pass radiance cascade — closely follows Unity RadianceCascades2DGI.shader
     //
-    // Processes ONE cascade level per pass. Wire top cascade first, then down to 0.
-    // Uses ping-pong: previous cascade output is fed as Texture2 (MainTex in Unity).
-    //
     // Texture0: Scene RGBA (RGB = emissive color)
     // Texture1: Distance field (from JFA pipeline)
     // Texture2: Parent cascade output (previous pass, or black for top cascade)
-    //
-    // The output atlas packs directions into a grid of blocks:
-    //   blockSqrt = 2^CascadeLevel
-    //   Each block holds spatial probe positions
-    //   4 sub-directions are averaged per probe per block
-
-    // Clamp samplers to prevent wrap-around bleeding at texture edges
-    SamplerState ClampPointSampler
-    {
-        Filter = MIN_MAG_MIP_POINT;
-        AddressU = Clamp;
-        AddressV = Clamp;
-    };
-    SamplerState ClampLinearSampler
-    {
-        Filter = MIN_MAG_MIP_LINEAR;
-        AddressU = Clamp;
-        AddressV = Clamp;
-    };
 
     float2 R = ViewSize;
 
@@ -41,18 +19,37 @@ shader RCUnity_TextureFX : TextureFX
 
     float2 CalculateRayRange(uint idx, uint count)
     {
-        // Matches Unity: geometric cascade intervals
-        // Values: 0, 3, 15, 63, 255 ... divided by maxValue
         float maxValue = float((1 << (count * 2)) - 1);
         float rangeStart = float((1 << (idx * 2)) - 1);
         float rangeEnd = float((1 << (idx * 2 + 2)) - 1);
         return float2(rangeStart, rangeEnd) / maxValue * RayRange;
     }
 
-    // Raymarching — matches Unity SampleRadianceSDF
+    // Safe point sample with UV clamping to prevent Wrap bleeding
+    float4 SampleClamped(Texture2D tex, float2 uv)
+    {
+        uv = clamp(uv, 0.5 / R, 1.0 - 0.5 / R);
+        return tex.SampleLevel(Sampler0, uv, 0);
+    }
+
+    // Manual bilinear with clamped point samples — avoids Wrap bleed
+    float4 SampleBilinearClamped(Texture2D tex, float2 uv)
+    {
+        float2 texelSize = 1.0 / R;
+        float2 texelPos = uv * R - 0.5;
+        float2 f = frac(texelPos);
+        float2 baseUV = (floor(texelPos) + 0.5) * texelSize;
+
+        float4 s00 = SampleClamped(tex, baseUV);
+        float4 s10 = SampleClamped(tex, baseUV + float2(texelSize.x, 0));
+        float4 s01 = SampleClamped(tex, baseUV + float2(0, texelSize.y));
+        float4 s11 = SampleClamped(tex, baseUV + texelSize);
+
+        return lerp(lerp(s00, s10, f.x), lerp(s01, s11, f.x), f.y);
+    }
+
     float4 SampleRadianceSDF(float2 rayOrigin, float2 rayDirection, float2 rayRange)
     {
-        // _Aspect.yx in Unity = swapped (height/max, width/max)
         float mxR = max(R.x, R.y);
         float2 aspectYX = float2(R.y, R.x) / mxR;
         float t = rayRange.x;
@@ -69,11 +66,11 @@ shader RCUnity_TextureFX : TextureFX
                 break;
             }
 
-            float dist = Texture1.SampleLevel(ClampPointSampler, currentPosition, 0).r;
+            float dist = SampleClamped(Texture1, currentPosition).r;
 
             if (dist < 0.001)
             {
-                hit = float4(Texture0.SampleLevel(ClampPointSampler, currentPosition, 0).rgb, 0);
+                hit = float4(SampleClamped(Texture0, currentPosition).rgb, 0);
                 break;
             }
 
@@ -114,8 +111,6 @@ shader RCUnity_TextureFX : TextureFX
             {
                 if (CascadeLevel < NumCascades - 1)
                 {
-                    // Merge with parent cascade (Texture2)
-                    // Matches Unity: position = coordsInBlock * 0.5 + 0.25
                     float2 position = coordsInBlock * 0.5 + 0.25;
                     float2 positionOffset = float2(
                         fmod(angleIndex, float(blockSqrt * 2)),
@@ -125,8 +120,7 @@ shader RCUnity_TextureFX : TextureFX
                     position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
 
                     float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
-                    mergeUV = clamp(mergeUV, 0.5 / R, 1.0 - 0.5 / R);
-                    float4 rad = Texture2.SampleLevel(ClampLinearSampler, mergeUV, 0);
+                    float4 rad = SampleBilinearClamped(Texture2, mergeUV);
 
                     radiance.rgb += rad.rgb * radiance.a;
                     radiance.a *= rad.a;
