@@ -1,0 +1,176 @@
+[TextureSource]
+
+shader RCCascade_TextureFX : TextureFX
+{
+    // Multi-pass radiance cascade — traces ONE cascade level per pass.
+    //
+    // Wire in VL (top cascade → bottom):
+    //   Pass N-1 (top):    Texture0=Emissive, Texture1=SDF, Texture2=ignored
+    //   Pass N-2..1:       Texture0=Emissive, Texture1=SDF, Texture2=previous pass output
+    //   Pass 0 (bottom):   Texture0=Emissive, Texture1=SDF, Texture2=previous pass output
+    //   Then pipe pass 0 output into RCComposite_TextureFX
+    //
+    // Texture0: Scene RGBA - RGB = emissive color
+    // Texture1: SDF - signed distance field
+    // Texture2: Parent cascade texture (output of cascade level N+1)
+    //
+    // The output texture layout packs direction×position into a 2D atlas:
+    //   Each pixel stores float4(radiance.rgb, visibility) for one probe+direction.
+    //   Directions are tiled in blocks across the texture.
+
+    float2 R = ViewSize;
+
+    int CascadeLevel = 0;
+    int NumCascades = 4;
+    int NumBaseDirections = 4;
+    int MarchSteps = 32;
+    float MaxDistance = 1.0;
+    float SDFScale = 1.0;
+    float RayOffset = 2.0;
+    float SmoothScale = 4.0;
+
+    #define TAU 6.28318530718
+
+    float2 IntersectAABB(float2 ro, float2 rd)
+    {
+        float2 tA = (0.0001 - ro) / rd;
+        float2 tB = (0.9999 - ro) / rd;
+        float2 t1 = min(tA, tB);
+        float2 t2 = max(tA, tB);
+        float tEnter = max(t1.x, t1.y);
+        float tExit = min(t2.x, t2.y);
+        return tEnter > tExit ? float2(-1, -1) : float2(tEnter, tExit);
+    }
+
+    float2 CascadeRange(int index)
+    {
+        float maxVal = float((1 << (NumCascades * 2)) - 1);
+        float s = float((1 << (index * 2)) - 1);
+        float e = float((1 << (index * 2 + 2)) - 1);
+        return float2(s, e) / maxVal * MaxDistance;
+    }
+
+    float4 TraceInterval(float2 origin, float2 rd, float2 range, int cascadeIndex)
+    {
+        float pixelSize = 1.0 / max(R.x, R.y);
+
+        float sMin = float(1 << cascadeIndex) * SmoothScale * pixelSize;
+        float sMax = float(1 << (cascadeIndex + 1)) * SmoothScale * pixelSize;
+        float tMin = range.x - sMin * 0.5;
+        float tMax = range.y + sMax * 0.5;
+        float tStart = max(pixelSize * RayOffset, tMin);
+
+        float2 tAABB = IntersectAABB(origin, rd);
+        if (tAABB.x > tMax || tAABB.y < tStart)
+            return float4(0, 0, 0, 1);
+
+        if (tAABB.x > tStart)
+            tStart = tAABB.x;
+        if (tAABB.y < tMax)
+            tMax = tAABB.y;
+
+        float t = tStart;
+
+        for (int s = 0; s < MarchSteps; s++)
+        {
+            float2 p = origin + t * rd;
+
+            float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
+
+            if (t > tStart + pixelSize && sdf < 1.0 * pixelSize)
+            {
+                float3 hitColor = Texture0.SampleLevel(Sampler0, p, 0).rgb;
+
+                float fadeIn = saturate((t - tMin) / max(sMin, pixelSize));
+                float fadeOut = saturate((tMax - t) / max(sMax, pixelSize));
+                float fade = fadeIn * fadeOut;
+
+                return float4(hitColor * fade, 1.0 - fade);
+            }
+
+            t += abs(sdf);
+
+            if (t >= tMax)
+                break;
+        }
+
+        return float4(0, 0, 0, 1);
+    }
+
+    stage override float4 Shading()
+    {
+        // Decode pixel position into probe index + direction index
+        // Layout: texture is divided into a grid of directional blocks.
+        // Total directions at this level: NumBaseDirections * 4^CascadeLevel
+        int nDirs = NumBaseDirections * (1 << (CascadeLevel * 2));
+        int blockSqrt = 1 << CascadeLevel;
+        float aspect = R.x / R.y;
+        float pixelSize = 1.0 / max(R.x, R.y);
+
+        float2 pixelIndex = floor(streams.TexCoord * R);
+
+        // Block layout: blockSqrt × blockSqrt blocks tile the texture
+        float2 blockDim = R / float(blockSqrt);
+        float2 block2D = floor(pixelIndex / blockDim);
+        float blockIndex = block2D.x + block2D.y * float(blockSqrt);
+
+        // Probe position within block = spatial coordinate of this probe
+        float2 probeCoord = fmod(pixelIndex, blockDim);
+        // Probe position in UV space (accounting for coarser grid)
+        float2 probeUV = (probeCoord + 0.5) * float(blockSqrt) / R;
+
+        float2 range = CascadeRange(CascadeLevel);
+
+        // Each probe traces 4 sub-directions within its angular cell
+        float4 result = float4(0, 0, 0, 0);
+
+        for (int i = 0; i < 4; i++)
+        {
+            int dirIndex = int(blockIndex) * 4 + i;
+            float angle = (float(dirIndex) + 0.5) / float(nDirs) * TAU;
+            float2 rd = normalize(float2(cos(angle) / aspect, sin(angle)));
+
+            float4 interval = TraceInterval(probeUV, rd, range, CascadeLevel);
+
+            if (interval.a != 0.0 && CascadeLevel < NumCascades - 1)
+            {
+                // Merge with parent cascade via bilinear interpolation
+                // Parent has half the spatial resolution — find 4 nearest probes
+                float2 parentBlockDim = blockDim * 0.5;
+                float2 parentPos = probeCoord * 0.5;
+                // Parent direction index for this sub-direction
+                float parentDirBlock = float(dirIndex);
+                float parentBlockSqrt = float(blockSqrt * 2);
+
+                float2 parentBlock2D = float2(
+                    fmod(parentDirBlock, parentBlockSqrt),
+                    floor(parentDirBlock / parentBlockSqrt)
+                );
+
+                // Bilinear: sample 4 nearest parent probes
+                float2 pf = parentPos - 0.5;
+                float2 pi = floor(pf);
+                float2 w = pf - pi;
+
+                float2 h = float2(1, 0);
+                float2 base = parentBlock2D * parentBlockDim;
+
+                float4 s00 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.yy, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s10 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.xy, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s01 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.yx, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float4 s11 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + h.xx, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+
+                float4 parent = lerp(lerp(s00, s10, w.x), lerp(s01, s11, w.x), w.y);
+
+                interval.rgb += interval.a * parent.rgb;
+                interval.a *= parent.a;
+            }
+
+            result += interval;
+        }
+
+        result *= 0.25;
+
+        return result;
+    }
+};

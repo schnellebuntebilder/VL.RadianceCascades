@@ -1,0 +1,54 @@
+[TextureSource]
+
+shader RCComposite_TextureFX : TextureFX
+{
+    // Final compositing pass for multi-pass radiance cascades.
+    //
+    // Texture0: Scene RGBA - RGB = emissive color
+    // Texture1: SDF - signed distance field
+    // Texture2: Cascade 0 output (from RCCascade_TextureFX at level 0)
+    //
+    // Reads cascade 0 probes, bilinearly interpolates to full resolution,
+    // blends direct emissive, and tonemaps.
+
+    float2 R = ViewSize;
+
+    int NumBaseDirections = 4;
+    float SDFScale = 1.0;
+    float Exposure = 1.0;
+    float BlendWidth = 1.0;
+
+    #define TAU 6.28318530718
+
+    float hash(float2 p)
+    {
+        return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    stage override float4 Shading()
+    {
+        float2 uv = streams.TexCoord;
+        float pixelSize = 1.0 / max(R.x, R.y);
+
+        float originSDF = Texture1.SampleLevel(Sampler0, uv, 0).r * SDFScale;
+
+        // Cascade 0 is at full spatial resolution (blockSqrt=1, single block)
+        // so we can just sample directly with bilinear filtering
+        float4 cascadeResult = Texture2.SampleLevel(Sampler1, uv, 0);
+
+        float3 totalRadiance = cascadeResult.rgb;
+        totalRadiance *= TAU;
+
+        // Blend direct emissive near surfaces
+        float3 selfColor = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
+        float blend = saturate(1.0 - originSDF * max(R.x, R.y) * BlendWidth);
+        totalRadiance = lerp(totalRadiance, selfColor * TAU, blend);
+        totalRadiance = max(totalRadiance, selfColor * TAU * blend * blend);
+
+        // Tonemapping
+        totalRadiance *= Exposure;
+        float3 mapped = 1.0 - 1.0 / pow(1.0 + totalRadiance, 2.5);
+
+        return float4(mapped, 1.0);
+    }
+};
