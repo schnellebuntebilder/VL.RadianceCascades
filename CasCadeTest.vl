@@ -47,7 +47,7 @@
               <Choice Kind="ProcessAppFlag" Name="TextureWindow" />
             </p:NodeReference>
             <Pin Id="FofrufFxa9qOZxKkjLYVMm" Name="Node Context" Kind="InputPin" IsHidden="true" />
-            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="1852, 11, 1545, 929" IsHidden="true" />
+            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="1855, 15, 1545, 929" IsHidden="true" />
             <Pin Id="RLEOWAnYkCHMvUxVkl3sCt" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="RPlnnAN4nu9NP3B0x2ZhOl" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="KdvQdF3HMyqPcd0sQz6Gn4" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
@@ -533,7 +533,7 @@
             <Pin Id="PC6f68Hqr1kOn51wcCEKXI" Name="Anchor" Kind="InputPin" />
             <Pin Id="RPDEEDN3Ou5L3JgS0M0W7U" Name="Output" Kind="OutputPin" />
           </Node>
-          <Pad Id="BNa2tu58EpcPitHDD8Bdnp" Comment="Color" Bounds="1002,-40,136,15" ShowValueBox="true" isIOBox="true" Value="0.49999714, 0, 1, 1">
+          <Pad Id="BNa2tu58EpcPitHDD8Bdnp" Comment="Color" Bounds="1002,-40,136,15" ShowValueBox="true" isIOBox="true" Value="0, 0, 0, 1">
             <p:TypeAnnotation LastCategoryFullName="Color" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="RGBA" />
             </p:TypeAnnotation>
@@ -703,9 +703,9 @@
               <Choice Kind="ProcessNode" Name="RCCascader" />
             </p:NodeReference>
             <Pin Id="IkZrNqm8lPRL0bWDtxcD3C" Name="Input" Kind="InputPin" />
+            <Pin Id="CyIAspF6ce7NXUjUyMoRpz" Name="Always Generate Mips for Input" Kind="InputPin" IsHidden="true" />
             <Pin Id="LmZdjElMJBvPN6oYgnUp3W" Name="Sampler" Kind="InputPin" IsHidden="true" />
             <Pin Id="GMLlHffoERDMpGqnWbpFiR" Name="Input 2" Kind="InputPin" />
-            <Pin Id="JYN17pqmcJcOAoy00a2QBb" Name="Sampler 2" Kind="InputPin" IsHidden="true" />
             <Pin Id="P374LKrMsLaNHI5IB1dEGB" Name="Input 3" Kind="InputPin" />
             <Pin Id="SRpuxwyHHY2LtxEJ4zpmqH" Name="Cascade Level" Kind="InputPin" />
             <Pin Id="GXCgawnAU1qMNyvkbLxV6p" Name="Num Cascades" Kind="InputPin" />
@@ -715,6 +715,7 @@
             <Pin Id="OgH9rkC5ByLOp8TRfyVBB9" Name="SDFScale" Kind="InputPin" />
             <Pin Id="DeXGkVZsh2aNuCls0fQer2" Name="Ray Offset" Kind="InputPin" />
             <Pin Id="POw0vMD3eAbOqwOhy4hMHR" Name="Smooth Scale" Kind="InputPin" />
+            <Pin Id="TOzZkDowByCO9XPKnwYBMM" Name="Mip Scale" Kind="InputPin" />
             <Pin Id="S1TnmFZ6TgjNd3xSWFD7pP" Name="Output Size" Kind="InputPin" />
             <Pin Id="AUP9SGXccIRPuk4MF2fyyr" Name="Output Format" Kind="InputPin" />
             <Pin Id="Mai0XyBetUXMaoR59zvpFB" Name="Render Format" Kind="InputPin" />
@@ -728,9 +729,9 @@
               <Choice Kind="ProcessNode" Name="RCCascader" />
             </p:NodeReference>
             <Pin Id="BuvCX1SrV6HO0etp0dkuPE" Name="Input" Kind="InputPin" />
+            <Pin Id="Q4Gb1GGbI0JMNfe9anNRzh" Name="Always Generate Mips for Input" Kind="InputPin" IsHidden="true" />
             <Pin Id="OSUhQigFVHvNF9g1rCgtSZ" Name="Sampler" Kind="InputPin" IsHidden="true" />
             <Pin Id="U07971mEccrOXqigw1LYNA" Name="Input 2" Kind="InputPin" />
-            <Pin Id="DIBwhDpFBMQL811cBcVeG3" Name="Sampler 2" Kind="InputPin" IsHidden="true" />
             <Pin Id="PrCe3DjKIo5MIEle4aWk4z" Name="Input 3" Kind="InputPin" />
             <Pin Id="S90W4nc3PUPMtxlp3hRYlP" Name="Cascade Level" Kind="InputPin" />
             <Pin Id="U1GOnrMpoodNtE25JQQ65m" Name="Num Cascades" Kind="InputPin" />
@@ -740,6 +741,7 @@
             <Pin Id="ANxx7SZn4lVLbgQFBXHUYM" Name="SDFScale" Kind="InputPin" />
             <Pin Id="KWFHoIuuJyQOF9duG5X1fu" Name="Ray Offset" Kind="InputPin" />
             <Pin Id="OxOxiLtv73UP6yVIduN6bQ" Name="Smooth Scale" Kind="InputPin" />
+            <Pin Id="Lhw7SDHr98OMf9uSXufNH9" Name="Mip Scale" Kind="InputPin" />
             <Pin Id="IPWjg6BQE7hM7xqEM1ug04" Name="Output Size" Kind="InputPin" />
             <Pin Id="TFF9MHs8euuQU1yOscMIF0" Name="Output Format" Kind="InputPin" />
             <Pin Id="TdwvRZCI6xGLBVbXI6EWsI" Name="Render Format" Kind="InputPin" />
@@ -753,9 +755,9 @@
               <Choice Kind="ProcessNode" Name="RCCascader" />
             </p:NodeReference>
             <Pin Id="DQtSmIxOZLVMPS0ZT2He9k" Name="Input" Kind="InputPin" />
+            <Pin Id="JpF7Pm8LGqWPMh84U228vU" Name="Always Generate Mips for Input" Kind="InputPin" IsHidden="true" />
             <Pin Id="LipO9NHPuYpMW6Q5wthcHe" Name="Sampler" Kind="InputPin" IsHidden="true" />
             <Pin Id="NOgtNNyzbVfMs1fsiJ4GbH" Name="Input 2" Kind="InputPin" />
-            <Pin Id="AJ08jfUfMUUOv0jwKqxL5k" Name="Sampler 2" Kind="InputPin" IsHidden="true" />
             <Pin Id="Sovm7DV8swtOYQZmvvPiMT" Name="Input 3" Kind="InputPin" />
             <Pin Id="Ebi6E3TenyqOEWWp0FFaoA" Name="Cascade Level" Kind="InputPin" />
             <Pin Id="SYJRAhyjGLkMMcYwKazX3I" Name="Num Cascades" Kind="InputPin" />
@@ -765,6 +767,7 @@
             <Pin Id="K4jmSkZEgJqMFrNm03H8ZQ" Name="SDFScale" Kind="InputPin" />
             <Pin Id="LuOpoAyjm2RO08QKXDqurp" Name="Ray Offset" Kind="InputPin" />
             <Pin Id="IDv3wBPiuBQO03s4eg5nte" Name="Smooth Scale" Kind="InputPin" />
+            <Pin Id="EOvCQHaBLejM3DZZiUtzaJ" Name="Mip Scale" Kind="InputPin" />
             <Pin Id="Fkj5fBt92acMeJ87rM9UMc" Name="Output Size" Kind="InputPin" />
             <Pin Id="JCdz0hgiYS6Qbav8oKwd4d" Name="Output Format" Kind="InputPin" />
             <Pin Id="UojhXOKe5A4P0jwybHuaFY" Name="Render Format" Kind="InputPin" />
@@ -778,9 +781,9 @@
               <Choice Kind="ProcessNode" Name="RCCascader" />
             </p:NodeReference>
             <Pin Id="OZGILQpqGyQLuvVwACUuWL" Name="Input" Kind="InputPin" />
+            <Pin Id="A1EDYLRWLCYOLJVbM0Oa3U" Name="Always Generate Mips for Input" Kind="InputPin" IsHidden="true" />
             <Pin Id="GBg5PioSfHpLaW0KdFfkM5" Name="Sampler" Kind="InputPin" IsHidden="true" />
             <Pin Id="UHZOtrjmn06OCzb12CLNKX" Name="Input 2" Kind="InputPin" />
-            <Pin Id="SJwyX5H6Gk7OVNiOMe9UMq" Name="Sampler 2" Kind="InputPin" IsHidden="true" />
             <Pin Id="Bk2SP9bUCUxP4B5wvgCGFV" Name="Input 3" Kind="InputPin" />
             <Pin Id="TRPrWxfl94bNht3v6QYJMo" Name="Cascade Level" Kind="InputPin" />
             <Pin Id="D3d9LydOzyFL3nCpvsnyKs" Name="Num Cascades" Kind="InputPin" />
@@ -790,6 +793,7 @@
             <Pin Id="M3vR9ep3LmLNGwz83X6QaE" Name="SDFScale" Kind="InputPin" />
             <Pin Id="CqsfNPjQD8jQTnXBGNFdMI" Name="Ray Offset" Kind="InputPin" />
             <Pin Id="JVhBQP8eJfzO9bG5kvCPfB" Name="Smooth Scale" Kind="InputPin" />
+            <Pin Id="DAsQUT9UyXZLXK3cQsM53U" Name="Mip Scale" Kind="InputPin" />
             <Pin Id="RZj20q2TKjeLhrhPnMYmrW" Name="Output Size" Kind="InputPin" />
             <Pin Id="Ri1eDrKVqNjPcAvOwb5SgU" Name="Output Format" Kind="InputPin" />
             <Pin Id="Gt2VlsM9PMOQAqjGwCnBnD" Name="Render Format" Kind="InputPin" />
@@ -980,7 +984,7 @@
         <Link Id="JTR2OGNeaJXQW6AehTO41t" Ids="AH3fqOZ6F6iPocz2NXJbUs,K4jmSkZEgJqMFrNm03H8ZQ" />
         <Link Id="J0xkdQXaA7hO89xTxCM741" Ids="AH3fqOZ6F6iPocz2NXJbUs,M3vR9ep3LmLNGwz83X6QaE" />
         <Link Id="NdQnyts4ul2LpMfBLPHDyh" Ids="AH3fqOZ6F6iPocz2NXJbUs,LTKFhX5zAvKOxzqDSd1dT2" />
-        <Link Id="GJS6jvnIb5ALKOwn30YR6F" Ids="M0tBx9PFtn6LbowHWotcFA,J9xoBnZjFqqMLgjR5lxUnj" />
+        <Link Id="J5V9R9aIWKAQINwJ1QmMkD" Ids="M0tBx9PFtn6LbowHWotcFA,J9xoBnZjFqqMLgjR5lxUnj" />
       </Patch>
     </Node>
   </Patch>

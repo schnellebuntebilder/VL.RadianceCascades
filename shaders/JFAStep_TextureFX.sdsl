@@ -1,0 +1,51 @@
+[TextureSource]
+
+shader JFAStep_TextureFX : TextureFX
+{
+    // One iteration of the Jump Flood Algorithm.
+    // Matches Unity JumpFlood.shader
+    //
+    // Texture0: Previous JFA pass output (RG = nearest seed UV)
+    //
+    // Wire multiple passes with halving StepSize:
+    //   Pass 0: StepSize = 0.5
+    //   Pass 1: StepSize = 0.25
+    //   Pass 2: StepSize = 0.125
+    //   ...etc for ceil(log(max(width,height))) passes
+
+    float2 R = ViewSize;
+    float StepSize = 0.5;
+
+    stage override float4 Shading()
+    {
+        float2 uv = streams.TexCoord;
+        float2 aspect = R / max(R.x, R.y);
+
+        float minDist = 1.0;
+        float2 minDistUV = float2(0, 0);
+
+        [unroll]
+        for (int y = -1; y <= 1; y++)
+        {
+            [unroll]
+            for (int x = -1; x <= 1; x++)
+            {
+                float2 peekUV = uv + float2(x, y) / aspect * StepSize;
+
+                float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
+                if (peek.x > 0.0 || peek.y > 0.0)
+                {
+                    float2 dir = peek - uv;
+                    float dist = dot(dir, dir);
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        minDistUV = peek;
+                    }
+                }
+            }
+        }
+
+        return float4(minDistUV, 0, 1);
+    }
+};

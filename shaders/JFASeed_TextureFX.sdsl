@@ -1,0 +1,20 @@
+[TextureSource]
+
+shader JFASeed_TextureFX : TextureFX
+{
+    // Seed pass for Jump Flood Algorithm.
+    // Outputs UV coordinates where alpha > threshold, else (0,0).
+    // Matches Unity ScreenUV.shader
+    //
+    // Texture0: Scene RGBA (alpha = occupancy)
+
+    float Threshold = 0.5;
+
+    stage override float4 Shading()
+    {
+        float2 uv = streams.TexCoord;
+        float alpha = Texture0.SampleLevel(Sampler0, uv, 0).a;
+        float2 seed = uv * (1.0 - step(alpha, Threshold));
+        return float4(seed, 0, 1);
+    }
+};

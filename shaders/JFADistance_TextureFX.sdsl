@@ -1,0 +1,17 @@
+[TextureSource]
+
+shader JFADistance_TextureFX : TextureFX
+{
+    // Converts JFA output to a distance field.
+    // Matches Unity DistanceField.shader
+    //
+    // Texture0: Final JFA output (RG = nearest seed UV)
+
+    stage override float4 Shading()
+    {
+        float2 uv = streams.TexCoord;
+        float2 jf = Texture0.SampleLevel(Sampler0, uv, 0).rg;
+        float dist = distance(uv, jf);
+        return float4(dist, dist, dist, 1);
+    }
+};

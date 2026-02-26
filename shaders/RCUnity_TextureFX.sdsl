@@ -1,0 +1,123 @@
+[TextureSource]
+
+shader RCUnity_TextureFX : TextureFX
+{
+    // Multi-pass radiance cascade — closely follows Unity RadianceCascades2DGI.shader
+    //
+    // Processes ONE cascade level per pass. Wire top cascade first, then down to 0.
+    // Uses ping-pong: previous cascade output is fed as Texture2 (MainTex in Unity).
+    //
+    // Texture0: Scene RGBA (RGB = emissive color)
+    // Texture1: Distance field (from JFA pipeline)
+    // Texture2: Parent cascade output (previous pass, or black for top cascade)
+    //
+    // The output atlas packs directions into a grid of blocks:
+    //   blockSqrt = 2^CascadeLevel
+    //   Each block holds spatial probe positions
+    //   4 sub-directions are averaged per probe per block
+
+    float2 R = ViewSize;
+
+    int CascadeLevel = 0;
+    int NumCascades = 4;
+    float RayRange = 1.0;
+    int MarchSteps = 32;
+
+    #define TAU 6.28318530718
+
+    float2 CalculateRayRange(uint idx, uint count)
+    {
+        // Matches Unity: geometric cascade intervals
+        // Values: 0, 3, 15, 63, 255 ... divided by maxValue
+        float maxValue = float((1 << (count * 2)) - 1);
+        float rangeStart = float((1 << (idx * 2)) - 1);
+        float rangeEnd = float((1 << (idx * 2 + 2)) - 1);
+        return float2(rangeStart, rangeEnd) / maxValue * RayRange;
+    }
+
+    // Raymarching — matches Unity SampleRadianceSDF
+    float4 SampleRadianceSDF(float2 rayOrigin, float2 rayDirection, float2 rayRange)
+    {
+        float2 aspect = R / max(R.x, R.y);
+        float t = rayRange.x;
+        float4 hit = float4(0, 0, 0, 1);
+
+        for (int i = 0; i < MarchSteps; i++)
+        {
+            float2 currentPosition = rayOrigin + t * rayDirection / aspect;
+
+            if (t > rayRange.y
+                || currentPosition.x < 0 || currentPosition.y < 0
+                || currentPosition.x > 1 || currentPosition.y > 1)
+            {
+                break;
+            }
+
+            float dist = Texture1.SampleLevel(Sampler0, currentPosition, 0).r;
+
+            if (dist < 0.001)
+            {
+                hit = float4(Texture0.SampleLevel(Sampler0, currentPosition, 0).rgb, 0);
+                break;
+            }
+
+            t += dist;
+        }
+
+        return hit;
+    }
+
+    stage override float4 Shading()
+    {
+        float2 pixelIndex = floor(streams.TexCoord * R);
+
+        int blockSqrt = 1 << CascadeLevel;
+
+        float2 blockDim = R / float(blockSqrt);
+        float2 block2DIndex = floor(pixelIndex / blockDim);
+        float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
+
+        float2 coordsInBlock = fmod(pixelIndex, blockDim);
+
+        float4 finalResult = float4(0, 0, 0, 0);
+
+        float2 rayOrigin = (coordsInBlock + 0.5) * float(blockSqrt) / R;
+        float2 range = CalculateRayRange(CascadeLevel, NumCascades);
+
+        for (int i = 0; i < 4; i++)
+        {
+            float angleStep = TAU / float(blockSqrt * blockSqrt * 4);
+            float angleIndex = blockIndex * 4.0 + float(i);
+            float angle = (angleIndex + 0.5) * angleStep;
+
+            float2 rayDirection = float2(cos(angle), sin(angle));
+
+            float4 radiance = SampleRadianceSDF(rayOrigin, rayDirection, range);
+
+            if (radiance.a != 0.0)
+            {
+                if (CascadeLevel < NumCascades - 1)
+                {
+                    // Merge with parent cascade (Texture2)
+                    // Matches Unity: position = coordsInBlock * 0.5 + 0.25
+                    float2 position = coordsInBlock * 0.5 + 0.25;
+                    float2 positionOffset = float2(
+                        fmod(angleIndex, float(blockSqrt * 2)),
+                        floor(angleIndex / float(blockSqrt * 2))
+                    );
+
+                    position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
+
+                    float4 rad = Texture2.SampleLevel(Sampler1, (position + positionOffset * blockDim * 0.5) / R, 0);
+
+                    radiance.rgb += rad.rgb * radiance.a;
+                    radiance.a *= rad.a;
+                }
+            }
+
+            finalResult += radiance * 0.25;
+        }
+
+        return finalResult;
+    }
+};
