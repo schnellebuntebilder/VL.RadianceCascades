@@ -2,93 +2,73 @@
 
 shader RadianceCascades_TextureFX : TextureFX
 {
-    // Texture0: Scene RGBA - RGB = emissive color, A = opacity
-    // Opaque pixels (A > Threshold) are treated as light emitters
+    // Texture0: Scene RGBA - RGB = emissive color
+    // Texture1: SDF - signed distance field (positive = outside, <=0 = surface)
 
     float2 R = ViewSize;
 
-    int NumDirections = 32;
-    int NumCascades = 3;
-    int StepsPerCascade = 16;
+    int NumDirections = 64;
+    int MarchSteps = 64;
     float MaxDistance = 0.5;
-    float Threshold = 0.01;
+    float SDFScale = 1.0;
+    float Exposure = 1.0;
 
     #define TAU 6.28318530718
 
-    // Calculate the ray interval [start, end] for a cascade level
-    // Intervals grow by 4x per level: [0,1], [1,4], [4,16], ... normalized to MaxDistance
-    float2 CascadeRange(int index, int count)
-    {
-        float maxVal = float((1 << (count * 2)) - 1);
-        float s = float((1 << (index * 2)) - 1);
-        float e = float((1 << (index * 2 + 2)) - 1);
-        return float2(s, e) / maxVal * MaxDistance;
-    }
-
-    // Trace a ray through one cascade interval using fixed-step alpha testing
-    // Returns float4(rgb, visibility) where visibility: 0 = hit, 1 = miss
-    float4 TraceInterval(float2 origin, float2 dir, float tMin, float tMax, float aspectY)
-    {
-        float stepSize = (tMax - tMin) / float(StepsPerCascade);
-        float t = tMin;
-
-        for (int i = 0; i < StepsPerCascade; i++)
-        {
-            float2 p = origin + t * dir * float2(1, aspectY) + 0.5;
-
-            if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1)
-                return float4(0, 0, 0, 1);
-
-            float4 s = Texture0.SampleLevel(Sampler0, p, 0);
-
-            if (s.a > Threshold)
-                return float4(s.rgb, 0);
-
-            t += stepSize;
-        }
-
-        return float4(0, 0, 0, 1);
-    }
-
     stage override float4 Shading()
     {
-        float2 uv = streams.TexCoord - 0.5;
-        float aspectY = R.x / R.y;
-        float3 col = 0;
+        float2 uv = streams.TexCoord;
+        float aspect = R.x / R.y;
+        float pixelSize = 1.0 / max(R.x, R.y);
+        float hitThreshold = pixelSize;
 
-        // Small offset to avoid self-intersection
-        float minT = 1.5 / R.x;
+        float originSDF = Texture1.SampleLevel(Sampler0, uv, 0).r * SDFScale;
+
+        float3 totalRadiance = 0;
 
         for (int d = 0; d < NumDirections; d++)
         {
             float angle = (float(d) + 0.5) / float(NumDirections) * TAU;
-            float2 rd = float2(cos(angle), sin(angle));
+            // Aspect-corrected direction, normalized in UV space
+            float2 rd = normalize(float2(cos(angle) / aspect, sin(angle)));
 
-            float3 radiance = 0;
+            // Start slightly offset to avoid self-intersection
+            float t = hitThreshold * 2.0;
 
-            // March through cascade intervals from near to far
-            for (int c = 0; c < NumCascades; c++)
+            for (int s = 0; s < MarchSteps; s++)
             {
-                float2 range = CascadeRange(c, NumCascades);
-                float tMin = max(range.x, minT);
-                float4 result = TraceInterval(uv, rd, tMin, range.y, aspectY);
+                float2 p = uv + t * rd;
 
-                if (result.a < 0.5)
+                if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
+                    break;
+
+                float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
+
+                if (sdf <= hitThreshold)
                 {
-                    radiance = result.rgb;
+                    totalRadiance += Texture0.SampleLevel(Sampler0, p, 0).rgb;
                     break;
                 }
-            }
 
-            col += radiance;
+                t += sdf;
+
+                if (t >= MaxDistance)
+                    break;
+            }
         }
 
-        col /= float(NumDirections);
+        totalRadiance /= float(NumDirections);
+        totalRadiance *= TAU;
 
-        // Blend with direct emissive color
-        float4 self = Texture0.SampleLevel(Sampler0, streams.TexCoord, 0);
-        col = lerp(col, self.rgb, self.a);
+        // Blend direct emissive near surfaces (matches shadertoy overlay)
+        float3 selfColor = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
+        float blend = saturate(3.0 - originSDF / pixelSize);
+        totalRadiance = lerp(totalRadiance, selfColor * TAU, blend);
 
-        return saturate(float4(col, 1.0));
+        // Tonemapping (matches shadertoy reference)
+        totalRadiance *= Exposure;
+        float3 mapped = 1.0 - 1.0 / pow(1.0 + totalRadiance, 2.5);
+
+        return float4(mapped, 1.0);
     }
 };
