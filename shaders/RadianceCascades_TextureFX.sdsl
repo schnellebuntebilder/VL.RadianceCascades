@@ -15,6 +15,7 @@ shader RadianceCascades_TextureFX : TextureFX
     float Exposure = 1.0;
     float BlendWidth = 0.1;
     float RayOffset = 2.0;
+    float MipScale = 0.25;
 
     #define TAU 6.28318530718
 
@@ -54,10 +55,10 @@ shader RadianceCascades_TextureFX : TextureFX
 
                 if (sdf <= hitThreshold)
                 {
-                    // Distant hits sample higher mip levels — mimics the
-                    // coarse spatial resolution of upper cascades and
-                    // produces smooth far-field illumination cheaply.
-                    float mip = log2(1.0 + t * max(R.x, R.y) * 0.5);
+                    // Mip level scales with distance for smooth far-field.
+                    // MipScale controls the tradeoff: higher = smoother but
+                    // may bleed light through thin occluders.
+                    float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
                     totalRadiance += Texture0.SampleLevel(Sampler0, p, mip).rgb;
                     break;
                 }
