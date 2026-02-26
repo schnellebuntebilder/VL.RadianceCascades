@@ -13,6 +13,14 @@ shader JFAStep_TextureFX : TextureFX
     //   Pass 2: StepSize = 0.125
     //   ...etc for ceil(log(max(width,height))) passes
 
+    // Clamp sampler to prevent wrap-around artifacts at texture edges
+    SamplerState ClampPointSampler
+    {
+        Filter = MIN_MAG_MIP_POINT;
+        AddressU = Clamp;
+        AddressV = Clamp;
+    };
+
     float2 R = ViewSize;
     float StepSize = 0.5;
 
@@ -33,11 +41,7 @@ shader JFAStep_TextureFX : TextureFX
             {
                 float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
 
-                // Skip out-of-bounds lookups to prevent Wrap sampling
-                if (peekUV.x < 0 || peekUV.x > 1 || peekUV.y < 0 || peekUV.y > 1)
-                    continue;
-
-                float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
+                float2 peek = Texture0.SampleLevel(ClampPointSampler, peekUV, 0).rg;
                 if (all(peek))
                 {
                     float2 dir = peek - uv;
