@@ -34,9 +34,8 @@ shader JFAStep_TextureFX : TextureFX
             {
                 float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
 
-                // Skip out-of-bounds samples to prevent wrapping
-                if (peekUV.x < 0 || peekUV.x > 1 || peekUV.y < 0 || peekUV.y > 1)
-                    continue;
+                // Clamp to avoid wrapping — edge pixels should be (0,0) = no seed
+                peekUV = clamp(peekUV, 0.0, 1.0);
 
                 float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
                 if (peek.x > 0.0 || peek.y > 0.0)
