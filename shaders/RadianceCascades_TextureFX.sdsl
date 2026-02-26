@@ -19,13 +19,7 @@ shader RadianceCascades_TextureFX : TextureFX
     float MipScale = 0.25;
     float SmoothScale = 4.0;
 
-    float SkyRadiance = 0.0;
-    float3 SkyColor = float3(0.2, 0.5, 1.0);
-    float3 SunColor = float3(1.0, 0.7, 0.1);
-    float SunAngle = 2.0;
-
     #define TAU 6.28318530718
-    #define PI 3.14159265359
 
     float hash(float2 p)
     {
@@ -44,16 +38,6 @@ shader RadianceCascades_TextureFX : TextureFX
         float s = float((1 << (index * 2)) - 1);
         float e = float((1 << (index * 2 + 2)) - 1);
         return float2(s, e) / maxVal * MaxDistance;
-    }
-
-    // Analytical sky radiance integrated over an angular interval [a0, a1]
-    float3 IntegrateSkyRadiance(float a0, float a1)
-    {
-        float SSunS = 8.0;
-        float ISSunS = 1.0 / SSunS;
-        float3 SI = SkyColor * (a1 - a0 - 0.5 * (cos(a1) - cos(a0)));
-        SI += SunColor * (atan(SSunS * (SunAngle - a0)) - atan(SSunS * (SunAngle - a1))) * ISSunS;
-        return SI * 0.16;
     }
 
     // Trace a ray through a cascade interval.
@@ -102,7 +86,6 @@ shader RadianceCascades_TextureFX : TextureFX
     }
 
     // Trace from a single probe origin for all cascades along one base direction.
-    // Returns merged radiance including sky at top cascade.
     float3 TraceProbe(float2 probeOrigin, float2 uv, float baseAngle, float angularCell, float aspect)
     {
         float3 parentRadiance = 0;
@@ -127,19 +110,7 @@ shader RadianceCascades_TextureFX : TextureFX
                     float2 rd = normalize(float2(cos(subAngle) / aspect, sin(subAngle)));
 
                     float4 result = TraceInterval(probeOrigin, rd, range, c);
-
-                    if (c == NumCascades - 1)
-                    {
-                        // Top cascade: merge with analytical sky radiance
-                        float angleStep = angularCell / 4.0;
-                        float3 sky = IntegrateSkyRadiance(subAngle, subAngle + angleStep) / angleStep;
-                        float3 merged = result.rgb + result.a * sky * SkyRadiance;
-                        cascadeRad += merged;
-                    }
-                    else
-                    {
-                        cascadeRad += result.rgb + result.a * parentRadiance;
-                    }
+                    cascadeRad += result.rgb + result.a * parentRadiance;
                 }
 
                 parentRadiance = cascadeRad * 0.25;
