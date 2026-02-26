@@ -70,9 +70,10 @@ shader RadianceCascades_TextureFX : TextureFX
         totalRadiance /= float(NumDirections);
         totalRadiance *= TAU;
 
-        // Blend direct emissive near surfaces
+        // Blend direct emissive near surfaces — wide enough to cover the
+        // SDF boundary region and eliminate black outlines
         float3 selfColor = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
-        float blend = saturate(3.0 - originSDF / pixelSize);
+        float blend = saturate(1.0 - originSDF * max(R.x, R.y) * 0.1);
         totalRadiance = lerp(totalRadiance, selfColor * TAU, blend);
 
         // Tonemapping (matches shadertoy reference)
