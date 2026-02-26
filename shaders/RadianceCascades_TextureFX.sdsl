@@ -4,11 +4,11 @@
 shader RadianceCascades_TextureFX : TextureFX
 {
     // Texture0: Scene RGBA - RGB = emissive color
-    // Texture1: SDF - signed distance field (positive = outside, <=0 = surface)
+    // Texture1: SDF - signed distance field
 
     float2 R = ViewSize;
 
-    int NumDirections = 32;
+    int NumBaseDirections = 8;
     int MarchSteps = 16;
     int NumCascades = 4;
     float MaxDistance = 1.0;
@@ -17,6 +17,7 @@ shader RadianceCascades_TextureFX : TextureFX
     float BlendWidth = 1.0;
     float RayOffset = 2.0;
     float MipScale = 0.25;
+    float SmoothScale = 4.0;
 
     #define TAU 6.28318530718
 
@@ -25,15 +26,12 @@ shader RadianceCascades_TextureFX : TextureFX
         return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
     }
 
-    // Snap UV to a coarse probe grid. Neighboring pixels that fall in
-    // the same cell share the same probe origin → smooth far-field.
     float2 SnapToGrid(float2 uv, float cellPixels)
     {
         float2 cell = cellPixels / R;
         return (floor(uv / cell) + 0.5) * cell;
     }
 
-    // Calculate cascade interval [start, end] — intervals grow by 4× per level
     float2 CascadeRange(int index)
     {
         float maxVal = float((1 << (NumCascades * 2)) - 1);
@@ -42,70 +40,112 @@ shader RadianceCascades_TextureFX : TextureFX
         return float2(s, e) / maxVal * MaxDistance;
     }
 
+    // Trace a ray through a cascade interval.
+    // Returns float4(radiance * fade, visibility).
+    // Smooth transitions at interval boundaries prevent hard cascade seams.
+    float4 TraceInterval(float2 origin, float2 rd, float2 range, int cascadeIndex)
+    {
+        float pixelSize = 1.0 / max(R.x, R.y);
+        float hitThreshold = pixelSize;
+
+        // Extend interval with smooth transition zones
+        float sMin = float(1 << cascadeIndex) * SmoothScale * pixelSize;
+        float sMax = float(1 << (cascadeIndex + 1)) * SmoothScale * pixelSize;
+        float tMin = range.x - sMin * 0.5;
+        float tMax = range.y + sMax * 0.5;
+        float tStart = max(hitThreshold * RayOffset, tMin);
+
+        float t = tStart;
+
+        for (int s = 0; s < MarchSteps; s++)
+        {
+            float2 p = origin + t * rd;
+
+            if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
+                break;
+
+            float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
+
+            if (sdf <= hitThreshold)
+            {
+                float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
+                float3 hitColor = Texture0.SampleLevel(Sampler0, p, mip).rgb;
+
+                // Fade at interval boundaries for smooth cascade transitions
+                float fadeIn = saturate((t - tMin) / max(sMin, pixelSize));
+                float fadeOut = saturate((tMax - t) / max(sMax, pixelSize));
+                float fade = fadeIn * fadeOut;
+
+                return float4(hitColor * fade, 1.0 - fade);
+            }
+
+            t += sdf;
+
+            if (t >= tMax)
+                break;
+        }
+
+        return float4(0, 0, 0, 1);
+    }
+
     stage override float4 Shading()
     {
         float2 uv = streams.TexCoord;
         float aspect = R.x / R.y;
         float pixelSize = 1.0 / max(R.x, R.y);
-        float hitThreshold = pixelSize;
 
         float originSDF = Texture1.SampleLevel(Sampler0, uv, 0).r * SDFScale;
-
         float jitter = hash(uv * R) * TAU;
 
         float3 totalRadiance = 0;
+        float angularCell = TAU / float(NumBaseDirections);
 
-        for (int d = 0; d < NumDirections; d++)
+        for (int d = 0; d < NumBaseDirections; d++)
         {
-            float angle = (float(d) + 0.5) / float(NumDirections) * TAU + jitter;
-            float2 rd = normalize(float2(cos(angle) / aspect, sin(angle)));
+            float baseAngle = (float(d) + 0.5) / float(NumBaseDirections) * TAU + jitter;
 
-            float3 radiance = 0;
-            float visibility = 1.0;
+            // Top-down cascade merge: start from farthest, propagate toward camera
+            float3 parentRadiance = 0;
 
-            for (int c = 0; c < NumCascades; c++)
+            for (int c = NumCascades - 1; c >= 0; c--)
             {
                 float2 range = CascadeRange(c);
-
-                // Upper cascades use a coarser spatial grid — this is the
-                // core radiance cascades idea: far light is sampled at low
-                // spatial resolution and naturally interpolates smoothly.
                 float cellSize = float(1 << c);
                 float2 probeUV = c == 0 ? uv : SnapToGrid(uv, cellSize);
 
-                float t = max(range.x, hitThreshold * RayOffset);
+                float3 cascadeRad = 0;
 
-                for (int s = 0; s < MarchSteps; s++)
+                if (c == 0)
                 {
-                    float2 p = probeUV + t * rd;
-
-                    if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
-                        break;
-
-                    float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
-
-                    if (sdf <= hitThreshold)
+                    // Near-field: single direction, finest spatial resolution
+                    float2 rd = normalize(float2(cos(baseAngle) / aspect, sin(baseAngle)));
+                    float4 result = TraceInterval(probeUV, rd, range, c);
+                    parentRadiance = result.rgb + result.a * parentRadiance;
+                }
+                else
+                {
+                    // Far-field: 4 angular sub-directions within the base cell.
+                    // This is the directional branching from the paper — higher
+                    // cascades resolve finer angular detail at coarser spatial res.
+                    for (int i = 0; i < 4; i++)
                     {
-                        float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
-                        radiance += visibility * Texture0.SampleLevel(Sampler0, p, mip).rgb;
-                        visibility = 0.0;
-                        break;
+                        float subAngle = baseAngle + ((float(i) + 0.5) / 4.0 - 0.5) * angularCell;
+                        float2 rd = normalize(float2(cos(subAngle) / aspect, sin(subAngle)));
+
+                        float4 result = TraceInterval(probeUV, rd, range, c);
+
+                        // Merge: this interval's radiance + visibility x parent
+                        cascadeRad += result.rgb + result.a * parentRadiance;
                     }
 
-                    t += sdf;
-
-                    if (t >= range.y)
-                        break;
+                    parentRadiance = cascadeRad * 0.25;
                 }
-
-                if (visibility == 0.0)
-                    break;
             }
 
-            totalRadiance += radiance;
+            totalRadiance += parentRadiance;
         }
 
-        totalRadiance /= float(NumDirections);
+        totalRadiance /= float(NumBaseDirections);
         totalRadiance *= TAU;
 
         // Blend direct emissive near surfaces
