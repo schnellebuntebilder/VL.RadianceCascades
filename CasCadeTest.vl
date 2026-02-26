@@ -47,7 +47,7 @@
               <Choice Kind="ProcessAppFlag" Name="TextureWindow" />
             </p:NodeReference>
             <Pin Id="FofrufFxa9qOZxKkjLYVMm" Name="Node Context" Kind="InputPin" IsHidden="true" />
-            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="1853, 63, 1545, 1301" IsHidden="true" />
+            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="1853, 63, 1545, 1363" IsHidden="true" />
             <Pin Id="RLEOWAnYkCHMvUxVkl3sCt" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="RPlnnAN4nu9NP3B0x2ZhOl" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="KdvQdF3HMyqPcd0sQz6Gn4" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
@@ -878,8 +878,8 @@
               <Choice Kind="ProcessNode" Name="JFASeed" />
             </p:NodeReference>
             <Pin Id="G8LB1CNTrL3LEnxYN97b23" Name="Input" Kind="InputPin" />
-            <Pin Id="FbpWGrWVYtoNKoohP40Lca" Name="Sampler" Kind="InputPin" IsHidden="true" />
-            <Pin Id="O5pxn2xOKhEQEUM80zz04O" Name="Threshold" Kind="InputPin" />
+            <Pin Id="HLPoAni3vMdNap22aeCPxg" Name="Sampler" Kind="InputPin" IsHidden="true" />
+            <Pin Id="IRiLvURYZwvOYzEm8eemjf" Name="Threshold" Kind="InputPin" />
             <Pin Id="EZiCkiQcIRxQKQKYsD5L1x" Name="Output Size" Kind="InputPin" />
             <Pin Id="KN59fLBvDsULTg1uLXJGVN" Name="Output Format" Kind="InputPin" />
             <Pin Id="OvPRngljF4uP4FNIQI8Si0" Name="Render Format" Kind="InputPin" IsHidden="true" />
@@ -980,7 +980,7 @@
             <ControlPoint Id="AGZQ7dx13HzMpoH8uNgBkg" Bounds="604,881" Alignment="Top" />
             <ControlPoint Id="V43kPnDWpFKNfbUgvYQETd" Bounds="604,1013" Alignment="Bottom" />
           </Node>
-          <Pad Id="T41TWo5M9yOMoDN8s9uojK" Comment="Iteration Count" Bounds="479,800,35,15" ShowValueBox="true" isIOBox="true" Value="6">
+          <Pad Id="T41TWo5M9yOMoDN8s9uojK" Comment="Iteration Count" Bounds="479,800,35,15" ShowValueBox="true" isIOBox="true" Value="7">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
@@ -1054,7 +1054,7 @@
             <ControlPoint Id="GMmEP8TcrEZPdFv8txXlcN" Bounds="471,1421" Alignment="Bottom" />
           </Node>
           <Pad Id="GeMIXp4TkhyOe9FMpjhjZV" SlotId="CPs6UGA9tFJMAXBVKL7I8o" Bounds="611,1142" />
-          <Pad Id="C8EDfwYF3gbNEGgx7VTwDC" Comment="Iteration Count" Bounds="459,1182,35,15" ShowValueBox="true" isIOBox="true" Value="4">
+          <Pad Id="C8EDfwYF3gbNEGgx7VTwDC" Comment="Iteration Count" Bounds="459,1182,35,15" ShowValueBox="true" isIOBox="true" Value="6">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
@@ -1074,30 +1074,17 @@
               <Choice Kind="TypeFlag" Name="Float32" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="RxLWd1F1eGbQUmGUx0yHh9" Comment="March Steps" Bounds="748,1280,35,15" ShowValueBox="true" isIOBox="true" Value="12">
+          <Pad Id="RxLWd1F1eGbQUmGUx0yHh9" Comment="March Steps" Bounds="748,1280,35,15" ShowValueBox="true" isIOBox="true" Value="32">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
           </Pad>
-          <Node Bounds="370,1130,85,19" Id="CTgPbjarlCLQOAuCZWRPu7">
-            <p:NodeReference LastCategoryFullName="Stride.TextureFX.Filter.Blur" LastDependency="VL.Addons.Stride.vl">
-              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-              <Choice Kind="ProcessAppFlag" Name="Blur" />
-            </p:NodeReference>
-            <Pin Id="K87IUIIjXzvOzhRL5qSedp" Name="Node Context" Kind="InputPin" IsHidden="true" />
-            <Pin Id="SEoqTn06IHsOFJqKkiFzfK" Name="Input" Kind="InputPin" />
-            <Pin Id="UwguNNQLApPLclSzHn7XpM" Name="Strength" Kind="InputPin" DefaultValue="0.04" />
-            <Pin Id="S6016PnTaQNOvzYdeybR3m" Name="Passes" Kind="InputPin" />
-            <Pin Id="SSAYA32LgwHPdlIChps7Kk" Name="Control" Kind="InputPin" />
-            <Pin Id="Azn1GnPYrBTNDUdKABr6Z2" Name="Output Texture" Kind="InputPin" IsHidden="true" />
-            <Pin Id="LfRGBxUFt7QQCCeSVS17PR" Name="Output Size" Kind="InputPin" IsHidden="true" />
-            <Pin Id="Vis0JxcASZRLsrp3tEsm0K" Name="Output Format" Kind="InputPin" IsHidden="true" />
-            <Pin Id="L598it1QLm2QROYfrFSCH9" Name="Render Format" Kind="InputPin" IsHidden="true" />
-            <Pin Id="DqZMwa1dVwkM0Ia4pPiiIs" Name="Enabled" Kind="InputPin" />
-            <Pin Id="Mu5BxIX2tx9P7i4gNFePOn" Name="State Output" Kind="OutputPin" IsHidden="true" />
-            <Pin Id="VcN3jLhMxcwMotzNvFz307" Name="Output" Kind="OutputPin" />
-          </Node>
           <Pad Id="GbPrXXNGOlVOWES36WJwUc" Comment="" Bounds="842,970,190,132" ShowValueBox="true" isIOBox="true" />
+          <Pad Id="E5fAS5nS6I0OZCMFOjcQIR" Comment="Exposure" Bounds="502,1460,35,15" ShowValueBox="true" isIOBox="true" Value="1">
+            <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
+              <Choice Kind="TypeFlag" Name="Float32" />
+            </p:TypeAnnotation>
+          </Pad>
         </Canvas>
         <Patch Id="HVKxJFvYb37PTpRDiOOXER" Name="Create" />
         <Patch Id="LrmTxaS7YdbNqlI49QUM6B" Name="Update" ParticipatingElements="Te3YfbcYmeHPaK3VY6LrBo" />
@@ -1254,6 +1241,7 @@
         <Link Id="Ka6R4PhM4Q0NyXJtcv1uwy" Ids="MbWXpfuLemzMF7zxG9RSP2,VLkaBFMUIzLLwKuoMf7cpV" />
         <Link Id="NhLEWlXEnKUOKGLpigkmfK" Ids="HuPgHoeEeFWPLX78jEOuXh,GbPrXXNGOlVOWES36WJwUc" />
         <Link Id="FVs9qoiC4JoM2AtV0bkISd" Ids="IC6ifq545dRPrGszmF8R8W,BzFY1s22PTJLGdwsBzGM06" />
+        <Link Id="Ocd1DcIUhdcN8wAA2iOvSx" Ids="E5fAS5nS6I0OZCMFOjcQIR,T89qjholSQkLYbPE2wDCJr" />
       </Patch>
     </Node>
   </Patch>
