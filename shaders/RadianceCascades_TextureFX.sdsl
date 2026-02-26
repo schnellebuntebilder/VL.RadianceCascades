@@ -40,6 +40,18 @@ shader RadianceCascades_TextureFX : TextureFX
         return float2(s, e) / maxVal * MaxDistance;
     }
 
+    // AABB ray intersection — returns [tEnter, tExit] for ray vs [0,1]² screen bounds
+    float2 IntersectAABB(float2 ro, float2 rd)
+    {
+        float2 tA = (0.0001 - ro) / rd;
+        float2 tB = (0.9999 - ro) / rd;
+        float2 t1 = min(tA, tB);
+        float2 t2 = max(tA, tB);
+        float tEnter = max(t1.x, t1.y);
+        float tExit = min(t2.x, t2.y);
+        return tEnter > tExit ? float2(-1, -1) : float2(tEnter, tExit);
+    }
+
     // Trace a ray through a cascade interval.
     // Returns float4(radiance * fade, visibility).
     float4 TraceInterval(float2 origin, float2 rd, float2 range, int cascadeIndex)
@@ -53,18 +65,29 @@ shader RadianceCascades_TextureFX : TextureFX
         float tMax = range.y + sMax * 0.5;
         float tStart = max(hitThreshold * RayOffset, tMin);
 
+        // Clip ray to screen bounds — skip rays that miss entirely
+        // and advance start to screen edge if origin is near border
+        float2 tAABB = IntersectAABB(origin, rd);
+        if (tAABB.x > tMax || tAABB.y < tStart)
+            return float4(0, 0, 0, 1);
+
+        if (tAABB.x > tStart)
+            tStart = tAABB.x;
+        if (tAABB.y < tMax)
+            tMax = tAABB.y;
+
         float t = tStart;
 
         for (int s = 0; s < MarchSteps; s++)
         {
             float2 p = origin + t * rd;
 
-            if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
-                break;
-
             float sdf = Texture1.SampleLevel(Sampler0, p, 0).r * SDFScale;
 
-            if (sdf <= hitThreshold)
+            // Refined hit detection: require minimum travel distance
+            // before accepting a hit, and use a looser distance check
+            // to avoid missing glancing surfaces
+            if (t > tStart + pixelSize && sdf < 1.0 * pixelSize)
             {
                 float mip = log2(1.0 + t * max(R.x, R.y)) * MipScale;
                 float3 hitColor = Texture0.SampleLevel(Sampler0, p, mip).rgb;
@@ -76,7 +99,7 @@ shader RadianceCascades_TextureFX : TextureFX
                 return float4(hitColor * fade, 1.0 - fade);
             }
 
-            t += sdf;
+            t += abs(sdf);
 
             if (t >= tMax)
                 break;
