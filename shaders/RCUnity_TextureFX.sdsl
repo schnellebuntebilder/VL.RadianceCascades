@@ -16,6 +16,20 @@ shader RCUnity_TextureFX : TextureFX
     //   Each block holds spatial probe positions
     //   4 sub-directions are averaged per probe per block
 
+    // Clamp samplers to prevent wrap-around bleeding at texture edges
+    SamplerState ClampPointSampler
+    {
+        Filter = MIN_MAG_MIP_POINT;
+        AddressU = Clamp;
+        AddressV = Clamp;
+    };
+    SamplerState ClampLinearSampler
+    {
+        Filter = MIN_MAG_MIP_LINEAR;
+        AddressU = Clamp;
+        AddressV = Clamp;
+    };
+
     float2 R = ViewSize;
 
     int CascadeLevel = 0;
@@ -55,11 +69,11 @@ shader RCUnity_TextureFX : TextureFX
                 break;
             }
 
-            float dist = Texture1.SampleLevel(Sampler0, currentPosition, 0).r;
+            float dist = Texture1.SampleLevel(ClampPointSampler, currentPosition, 0).r;
 
             if (dist < 0.001)
             {
-                hit = float4(Texture0.SampleLevel(Sampler0, currentPosition, 0).rgb, 0);
+                hit = float4(Texture0.SampleLevel(ClampPointSampler, currentPosition, 0).rgb, 0);
                 break;
             }
 
@@ -110,7 +124,7 @@ shader RCUnity_TextureFX : TextureFX
 
                     position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
 
-                    float4 rad = Texture2.SampleLevel(Sampler1, (position + positionOffset * blockDim * 0.5) / R, 0);
+                    float4 rad = Texture2.SampleLevel(ClampLinearSampler, (position + positionOffset * blockDim * 0.5) / R, 0);
 
                     radiance.rgb += rad.rgb * radiance.a;
                     radiance.a *= rad.a;

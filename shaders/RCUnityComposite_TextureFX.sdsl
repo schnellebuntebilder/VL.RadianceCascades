@@ -8,6 +8,19 @@ shader RCUnityComposite_TextureFX : TextureFX
     // Texture0: Scene RGBA (RGB = emissive color)
     // Texture1: Cascade 0 output (from RCUnity at level 0)
 
+    SamplerState ClampPointSampler
+    {
+        Filter = MIN_MAG_MIP_POINT;
+        AddressU = Clamp;
+        AddressV = Clamp;
+    };
+    SamplerState ClampLinearSampler
+    {
+        Filter = MIN_MAG_MIP_LINEAR;
+        AddressU = Clamp;
+        AddressV = Clamp;
+    };
+
     float2 R = ViewSize;
     float Exposure = 1.0;
 
@@ -18,13 +31,13 @@ shader RCUnityComposite_TextureFX : TextureFX
         float2 uv = streams.TexCoord;
 
         // Cascade 0 has blockSqrt=1, so full spatial resolution — sample with bilinear
-        float3 gi = Texture1.SampleLevel(Sampler1, uv, 0).rgb;
+        float3 gi = Texture1.SampleLevel(ClampLinearSampler, uv, 0).rgb;
 
         // Scale by TAU (full circle integration normalization)
         gi *= TAU;
 
         // Add direct emissive
-        float3 scene = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
+        float3 scene = Texture0.SampleLevel(ClampPointSampler, uv, 0).rgb;
         float3 color = scene + gi;
 
         // Tonemapping + exposure
