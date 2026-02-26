@@ -1,4 +1,5 @@
 [TextureSource]
+[WantsMips("Texture0")]
 
 shader RadianceCascades_TextureFX : TextureFX
 {
@@ -7,12 +8,11 @@ shader RadianceCascades_TextureFX : TextureFX
 
     float2 R = ViewSize;
 
-    int NumDirections = 32;
+    int NumDirections = 64;
     int MarchSteps = 64;
     float MaxDistance = 0.5;
     float SDFScale = 1.0;
     float Exposure = 1.0;
-    int GatherRadius = 1;
 
     #define TAU 6.28318530718
 
@@ -21,10 +21,18 @@ shader RadianceCascades_TextureFX : TextureFX
         return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
     }
 
-    // Trace rays for a single pixel and return average radiance
-    float3 TracePixel(float2 uv, float aspect, float pixelSize, float hitThreshold, float jitter)
+    stage override float4 Shading()
     {
-        float3 rad = 0;
+        float2 uv = streams.TexCoord;
+        float aspect = R.x / R.y;
+        float pixelSize = 1.0 / max(R.x, R.y);
+        float hitThreshold = pixelSize;
+
+        float originSDF = Texture1.SampleLevel(Sampler0, uv, 0).r * SDFScale;
+
+        float jitter = hash(uv * R) * TAU;
+
+        float3 totalRadiance = 0;
 
         for (int d = 0; d < NumDirections; d++)
         {
@@ -44,7 +52,11 @@ shader RadianceCascades_TextureFX : TextureFX
 
                 if (sdf <= hitThreshold)
                 {
-                    rad += Texture0.SampleLevel(Sampler0, p, 0).rgb;
+                    // Distant hits sample higher mip levels — mimics the
+                    // coarse spatial resolution of upper cascades and
+                    // produces smooth far-field illumination cheaply.
+                    float mip = log2(1.0 + t * max(R.x, R.y) * 0.5);
+                    totalRadiance += Texture0.SampleLevel(Sampler0, p, mip).rgb;
                     break;
                 }
 
@@ -55,41 +67,8 @@ shader RadianceCascades_TextureFX : TextureFX
             }
         }
 
-        return rad / float(NumDirections) * TAU;
-    }
-
-    stage override float4 Shading()
-    {
-        float2 uv = streams.TexCoord;
-        float aspect = R.x / R.y;
-        float pixelSize = 1.0 / max(R.x, R.y);
-        float hitThreshold = pixelSize;
-        float2 texelSize = 1.0 / R;
-
-        float originSDF = Texture1.SampleLevel(Sampler0, uv, 0).r * SDFScale;
-
-        // Interleaved spatial gather: each neighbor pixel traces rays with a
-        // unique angular offset. Averaging them gives smooth results with
-        // effectively (2*GatherRadius+1)^2 × NumDirections total directions.
-        float3 totalRadiance = 0;
-        float totalWeight = 0;
-
-        for (int gy = -GatherRadius; gy <= GatherRadius; gy++)
-        {
-            for (int gx = -GatherRadius; gx <= GatherRadius; gx++)
-            {
-                float2 neighborUV = uv + float2(gx, gy) * texelSize;
-                float jitter = hash(neighborUV * R) * TAU;
-
-                // Gaussian-ish weight: center pixel counts most
-                float w = 1.0 / (1.0 + float(gx * gx + gy * gy));
-
-                totalRadiance += TracePixel(neighborUV, aspect, pixelSize, hitThreshold, jitter) * w;
-                totalWeight += w;
-            }
-        }
-
-        totalRadiance /= totalWeight;
+        totalRadiance /= float(NumDirections);
+        totalRadiance *= TAU;
 
         // Blend direct emissive near surfaces
         float3 selfColor = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
