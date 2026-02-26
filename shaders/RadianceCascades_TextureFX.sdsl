@@ -13,6 +13,8 @@ shader RadianceCascades_TextureFX : TextureFX
     float MaxDistance = 0.5;
     float SDFScale = 1.0;
     float Exposure = 1.0;
+    float BlendWidth = 0.1;
+    float RayOffset = 2.0;
 
     #define TAU 6.28318530718
 
@@ -39,7 +41,7 @@ shader RadianceCascades_TextureFX : TextureFX
             float angle = (float(d) + 0.5) / float(NumDirections) * TAU + jitter;
             float2 rd = normalize(float2(cos(angle) / aspect, sin(angle)));
 
-            float t = hitThreshold * 2.0;
+            float t = hitThreshold * RayOffset;
 
             for (int s = 0; s < MarchSteps; s++)
             {
@@ -70,11 +72,13 @@ shader RadianceCascades_TextureFX : TextureFX
         totalRadiance /= float(NumDirections);
         totalRadiance *= TAU;
 
-        // Blend direct emissive near surfaces — wide enough to cover the
-        // SDF boundary region and eliminate black outlines
+        // Approach 1: Blend direct emissive using SDF distance
         float3 selfColor = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
-        float blend = saturate(1.0 - originSDF * max(R.x, R.y) * 0.1);
+        float blend = saturate(1.0 - originSDF * max(R.x, R.y) * BlendWidth);
         totalRadiance = lerp(totalRadiance, selfColor * TAU, blend);
+
+        // Approach 2: Ensure no black gap — near emitters, enforce minimum
+        totalRadiance = max(totalRadiance, selfColor * TAU * blend * blend);
 
         // Tonemapping (matches shadertoy reference)
         totalRadiance *= Exposure;
