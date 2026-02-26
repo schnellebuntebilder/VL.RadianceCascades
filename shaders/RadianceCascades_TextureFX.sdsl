@@ -69,7 +69,7 @@ shader RadianceCascades_TextureFX : TextureFX
                 // core radiance cascades idea: far light is sampled at low
                 // spatial resolution and naturally interpolates smoothly.
                 float cellSize = float(1 << c);
-                float2 probeUV = c == 0 ? uv : SnapToGrid(uv, cellSize, R);
+                float2 probeUV = c == 0 ? uv : SnapToGrid(uv, cellSize);
 
                 float t = max(range.x, hitThreshold * RayOffset);
 
