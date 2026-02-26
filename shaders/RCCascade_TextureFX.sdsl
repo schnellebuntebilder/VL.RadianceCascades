@@ -148,22 +148,23 @@ shader RCCascade_TextureFX : TextureFX
                 );
 
                 // Bilinear: sample 4 nearest parent probes
-                float2 pf = parentPos - 0.5;
-                float2 pi = floor(pf);
-                float2 w = pf - pi;
-
                 float2 base = parentBlock2D * parentBlockDim;
-                float2 off00 = float2(0, 0);
-                float2 off10 = float2(1, 0);
-                float2 off01 = float2(0, 1);
-                float2 off11 = float2(1, 1);
 
-                float4 s00 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off00, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
-                float4 s10 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off10, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
-                float4 s01 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off01, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
-                float4 s11 = Texture2.SampleLevel(Sampler1, (base + clamp(pi + off11, 0.5, parentBlockDim - 0.5) + 0.5) / R, 0);
+                float2 bpf = parentPos - 0.5;
+                float2 bpi = floor(bpf);
+                float2 bw = bpf - bpi;
 
-                float4 parent = lerp(lerp(s00, s10, w.x), lerp(s01, s11, w.x), w.y);
+                float2 uv00 = (base + clamp(bpi + float2(0, 0), 0.5, parentBlockDim - 0.5) + 0.5) / R;
+                float2 uv10 = (base + clamp(bpi + float2(1, 0), 0.5, parentBlockDim - 0.5) + 0.5) / R;
+                float2 uv01 = (base + clamp(bpi + float2(0, 1), 0.5, parentBlockDim - 0.5) + 0.5) / R;
+                float2 uv11 = (base + clamp(bpi + float2(1, 1), 0.5, parentBlockDim - 0.5) + 0.5) / R;
+
+                float4 s00 = Texture2.SampleLevel(Sampler1, uv00, 0);
+                float4 s10 = Texture2.SampleLevel(Sampler1, uv10, 0);
+                float4 s01 = Texture2.SampleLevel(Sampler1, uv01, 0);
+                float4 s11 = Texture2.SampleLevel(Sampler1, uv11, 0);
+
+                float4 parent = lerp(lerp(s00, s10, bw.x), lerp(s01, s11, bw.x), bw.y);
 
                 interval.rgb += interval.a * parent.rgb;
                 interval.a *= parent.a;
