@@ -47,7 +47,7 @@
               <Choice Kind="ProcessAppFlag" Name="TextureWindow" />
             </p:NodeReference>
             <Pin Id="FofrufFxa9qOZxKkjLYVMm" Name="Node Context" Kind="InputPin" IsHidden="true" />
-            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="2311, 201, 995, 835" IsHidden="true" />
+            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="2311, 201, 995, 866" IsHidden="true" />
             <Pin Id="RLEOWAnYkCHMvUxVkl3sCt" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="RPlnnAN4nu9NP3B0x2ZhOl" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="KdvQdF3HMyqPcd0sQz6Gn4" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
@@ -253,11 +253,10 @@
             </p:TypeAnnotation>
             <p:Value>
               <Item>0.56, 0</Item>
-              <Item>0, 0</Item>
-              <Item>-0.55, -0.67</Item>
+              <Item>-0.44, -0.67</Item>
             </p:Value>
           </Pad>
-          <Pad Id="FmJIZrIdBwwNPrzBL0DfAI" Comment="Scaling" Bounds="666,-160,35,28" ShowValueBox="true" isIOBox="true" Value="0.55, 1">
+          <Pad Id="FmJIZrIdBwwNPrzBL0DfAI" Comment="Scaling" Bounds="666,-160,35,28" ShowValueBox="true" isIOBox="true" Value="0.78, 1">
             <p:TypeAnnotation LastCategoryFullName="2D" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Vector2" />
             </p:TypeAnnotation>
@@ -276,7 +275,7 @@
               <Choice Kind="TypeFlag" Name="Float32" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="VmBgkEsMVAbLYgOflUbmHJ" Comment="" Bounds="868,-299,136,80" ShowValueBox="true" isIOBox="true">
+          <Pad Id="VmBgkEsMVAbLYgOflUbmHJ" Comment="" Bounds="905,-299,136,80" ShowValueBox="true" isIOBox="true">
             <p:TypeAnnotation LastCategoryFullName="Collections" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Spread" />
               <p:TypeArguments>
@@ -287,7 +286,6 @@
             </p:TypeAnnotation>
             <p:Value>
               <Item>0, 0.7599988, 1, 1</Item>
-              <Item>1, 0.5400021, 0, 1</Item>
               <Item>1, 0, 0.1800003, 1</Item>
             </p:Value>
           </Pad>
@@ -880,7 +878,7 @@
             </p:NodeReference>
             <Pin Id="G8LB1CNTrL3LEnxYN97b23" Name="Input" Kind="InputPin" />
             <Pin Id="HLPoAni3vMdNap22aeCPxg" Name="Sampler" Kind="InputPin" IsHidden="true" />
-            <Pin Id="IRiLvURYZwvOYzEm8eemjf" Name="Threshold" Kind="InputPin" DefaultValue="0.36" />
+            <Pin Id="IRiLvURYZwvOYzEm8eemjf" Name="Threshold" Kind="InputPin" />
             <Pin Id="EZiCkiQcIRxQKQKYsD5L1x" Name="Output Size" Kind="InputPin" />
             <Pin Id="KN59fLBvDsULTg1uLXJGVN" Name="Output Format" Kind="InputPin" />
             <Pin Id="OvPRngljF4uP4FNIQI8Si0" Name="Render Format" Kind="InputPin" IsHidden="true" />
@@ -915,9 +913,8 @@
               <Choice Kind="ProcessNode" Name="RCUnityComposite" />
             </p:NodeReference>
             <Pin Id="PVjisjoBFRDNiGgEtqJMWq" Name="Input" Kind="InputPin" />
+            <Pin Id="Go8RgL1l2yGQNLP3VOkDfI" Name="Sampler" Kind="InputPin" IsHidden="true" />
             <Pin Id="NcHbjxBOo1LOPOUCzz5ll3" Name="Input 2" Kind="InputPin" />
-            <Pin Id="Qd6mXUBHTcZNimiQOPTzfc" Name="Clamp Point Sampler" Kind="InputPin" />
-            <Pin Id="ILj2Yzol1GAPMXlKpfXbXh" Name="Clamp Linear Sampler" Kind="InputPin" />
             <Pin Id="T89qjholSQkLYbPE2wDCJr" Name="Exposure" Kind="InputPin" />
             <Pin Id="C9NJ1LYsqRDNlIIr25fc7x" Name="Output Size" Kind="InputPin" />
             <Pin Id="OwS50rVVWZTP0sXD7gO0Sf" Name="Output Format" Kind="InputPin" />
@@ -952,7 +949,7 @@
                   <Choice Kind="ProcessNode" Name="JFAStep" />
                 </p:NodeReference>
                 <Pin Id="FoTBwgruL7RODmQ3j9L5oa" Name="Input" Kind="InputPin" />
-                <Pin Id="Osv7gNI83ccOx7jH63D4Mf" Name="Clamp Point Sampler" Kind="InputPin" />
+                <Pin Id="PHKzqsTjNjILXmASTtDLG1" Name="Clamp Point Sampler" Kind="InputPin" />
                 <Pin Id="SjqetqaoHTsLhnnrXlcMVF" Name="Step Size" Kind="InputPin" />
                 <Pin Id="DiVqUQzrAOSOq3gQhFLVoc" Name="Output Size" Kind="InputPin" />
                 <Pin Id="NbGqCy2S0BuLM6mbEh3Psq" Name="Output Format" Kind="InputPin" />
@@ -1016,10 +1013,9 @@
                   <Choice Kind="ProcessNode" Name="RCUnity" />
                 </p:NodeReference>
                 <Pin Id="SyobTeGOtRMOny0AoExkNs" Name="Input" Kind="InputPin" />
+                <Pin Id="JBN6Hkind0WP8Q4oLxaJGp" Name="Sampler" Kind="InputPin" IsHidden="true" />
                 <Pin Id="GMrJ6mrltT1MWOe75c2SA8" Name="Input 2" Kind="InputPin" />
                 <Pin Id="Dj0pIgzsFxGNm7tQDIunrG" Name="Input 3" Kind="InputPin" />
-                <Pin Id="NO7nIoFX7iALQ805AVOEBE" Name="Clamp Point Sampler" Kind="InputPin" />
-                <Pin Id="OgmCFCRYmvELqaLggTjBby" Name="Clamp Linear Sampler" Kind="InputPin" />
                 <Pin Id="K4YOI4QhfgXLx83gQaNTcu" Name="Cascade Level" Kind="InputPin" />
                 <Pin Id="PzfcPaTtnWXLnqyCAS7wFB" Name="Num Cascades" Kind="InputPin" />
                 <Pin Id="TdaQx5JZ9rBM3nrgtC1aFW" Name="Ray Range" Kind="InputPin" />
@@ -1053,6 +1049,7 @@
             </Patch>
             <ControlPoint Id="NWYYHG2tsTGNl39qkIBSb2" Bounds="511,1226" Alignment="Top" />
             <ControlPoint Id="GMmEP8TcrEZPdFv8txXlcN" Bounds="471,1421" Alignment="Bottom" />
+            <ControlPoint Id="RVEpbRmz0zyNU2CvLqdJPL" Bounds="632,1421" Alignment="Bottom" />
           </Node>
           <Pad Id="GeMIXp4TkhyOe9FMpjhjZV" SlotId="CPs6UGA9tFJMAXBVKL7I8o" Bounds="611,1142" />
           <Pad Id="C8EDfwYF3gbNEGgx7VTwDC" Comment="Iteration Count" Bounds="459,1182,35,15" ShowValueBox="true" isIOBox="true" Value="8">
@@ -1135,6 +1132,21 @@
               <Choice Kind="TypeFlag" Name="Float32" />
             </p:TypeAnnotation>
           </Pad>
+          <Pad Id="PziA6rCvoYKPH2K89gr2xx" Comment="" Bounds="767,990,190,132" ShowValueBox="true" isIOBox="true" />
+          <Node Bounds="866,1320,52,19" Id="A6QKr0PnTdEQKIbuUX33fD">
+            <p:NodeReference LastCategoryFullName="Collections.Spread" LastDependency="VL.CoreLib.vl">
+              <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
+              <CategoryReference Kind="RecordType" Name="Spread" NeedsToBeDirectParent="true">
+                <p:OuterCategoryReference Kind="Category" Name="Collections" NeedsToBeDirectParent="true" />
+              </CategoryReference>
+              <Choice Kind="OperationCallFlag" Name="GetSlice" />
+            </p:NodeReference>
+            <Pin Id="SeYwVzs6Yx8QZHpzdOGLFr" Name="Input" Kind="StateInputPin" />
+            <Pin Id="KwMclsTIQidNsu7xD7HcZK" Name="Default Value" Kind="InputPin" />
+            <Pin Id="McRhirDZtOmPUxT4iocoeh" Name="Index" Kind="InputPin" DefaultValue="6" />
+            <Pin Id="JEZxBak3kCtOrURDak34Sp" Name="Result" Kind="OutputPin" />
+          </Node>
+          <Pad Id="Okn4Hb7WpBFM1wwPlg3WDV" Comment="" Bounds="868,1359,190,132" ShowValueBox="true" isIOBox="true" />
         </Canvas>
         <Patch Id="HVKxJFvYb37PTpRDiOOXER" Name="Create" />
         <Patch Id="LrmTxaS7YdbNqlI49QUM6B" Name="Update" ParticipatingElements="Te3YfbcYmeHPaK3VY6LrBo" />
@@ -1169,7 +1181,6 @@
         <Link Id="Qu5mUkghE41O8CxK3EsAu0" Ids="LbVqdOL9O9DLdZdvEG3Aez,TElYPJMful3Pb0fNLJ6iSh" />
         <Link Id="Kzvwjf6PxzhMk2T09n58Fg" Ids="SGx4sAvqQSINNIqle4UGm1,VcW9RmCDl4UPBfaQHjqwwb" />
         <Link Id="KKcW4GLBAmxQSfRHGdaWum" Ids="KmnU8kT4hLjPwO4WYsjUZu,MYzlUXN1JFqNUQqvZMyggM" />
-        <Link Id="FJaFNVjivyoQYMaXLvltjQ" Ids="RPDEEDN3Ou5L3JgS0M0W7U,BRTE6b4DgA7Or3fo9FlupP" />
         <Link Id="G3FSl6V1aRaPCisP4KG3cp" Ids="BNa2tu58EpcPitHDD8Bdnp,THcMr0nm4UWPrzRAxCtTqn" />
         <Link Id="KB6poFbZL26Prt6m5biOm9" Ids="Fm0wloQaxhROedby8yivcu,TFkr5sLZdPQPVPg7DtDmfp" />
         <Link Id="VEIGgfEgGLrNY2hKEHOvHa" Ids="Htq6zjnZ3SGL9c2O6ZqPPV,S6zaXnzRXmpQBj8hYMeXbb" />
@@ -1188,7 +1199,6 @@
         <Link Id="BzRPaANlhIsLwh1O47Bsna" Ids="QTqqkwjFjPXOMi47owaOOb,V3K9XCUlkPAQOFvOV2cwAp" />
         <Link Id="NNTmLIrHw7NO9Fu40TGyHy" Ids="ObCslKc3HEyOyA36JURpOm,KUX0h8mAHQqOkbS10cejov" />
         <Link Id="V3GKsccJ6BlOtIB6Wbfv1Y" Ids="LZ2GCoYAyOjPortdYcvIFQ,AP2i5lvvgC4LMa5QAGutfD" />
-        <Link Id="A5seGb0ZiEyPXh9JtLVi2g" Ids="P1moKQkPU4dLhFFYl7l7Ne,JXTynzQKb5BOnDeqjJ2NNQ" />
         <Link Id="MiTDirji4PFNNizu2nA8PG" Ids="TCWpZRnVIwZM3jP6brdBA2,HDI30hsiziuMUCceMbDqRZ" />
         <Link Id="Npv0Y4FAoiZQHhhbFyH76h" Ids="IcsFt3BzB9nPk9KUywOtqS,VktcehvhPb7NyOKE7xlb8Y" />
         <Link Id="BFze3nMsUfwOTpNN9rcetJ" Ids="JYePmCua9GOLxc0gBvu5iN,SdYN0pSovuqMZZ2xctBkWn" />
@@ -1294,6 +1304,10 @@
         <Link Id="G6wZAtxhUdKPgcNv5fp3CK" Ids="PetjyCJL7SCLiShEgDDIp7,ElcwBXvIqGgNPLPXoInfDk" />
         <Link Id="LUormTXTuATMJXz8EabhOR" Ids="GMmEP8TcrEZPdFv8txXlcN,NcHbjxBOo1LOPOUCzz5ll3" />
         <Link Id="DrccWwfaxxEMILV6aR8vAx" Ids="C8EDfwYF3gbNEGgx7VTwDC,PzfcPaTtnWXLnqyCAS7wFB" />
+        <Link Id="U5uoW3KwZp8K9uIaq73cDQ" Ids="HuPgHoeEeFWPLX78jEOuXh,PziA6rCvoYKPH2K89gr2xx" />
+        <Link Id="HcXVAFJKDU8NtROCSCPphx" Ids="PvVr8eY09TWPf64gD7Z4bx,RVEpbRmz0zyNU2CvLqdJPL" />
+        <Link Id="CAoR4plZZ98Nm5J6XWBJLS" Ids="RVEpbRmz0zyNU2CvLqdJPL,SeYwVzs6Yx8QZHpzdOGLFr" />
+        <Link Id="Mew7LZuXG5gOqet3iGpiQw" Ids="JEZxBak3kCtOrURDak34Sp,Okn4Hb7WpBFM1wwPlg3WDV" />
       </Patch>
     </Node>
   </Patch>
