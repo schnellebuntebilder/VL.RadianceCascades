@@ -85,14 +85,16 @@ shader RadianceCascades_TextureFX : TextureFX
         return float4(0, 0, 0, 1);
     }
 
-    // Trace from a single probe origin for all cascades along one base direction.
-    float3 TraceProbe(float2 probeOrigin, float2 uv, float baseAngle, float angularCell, float aspect)
+    // Trace from a probe origin for all cascades along one base direction.
+    float3 TraceProbe(float2 uv, float baseAngle, float angularCell, float aspect)
     {
         float3 parentRadiance = 0;
 
         for (int c = NumCascades - 1; c >= 0; c--)
         {
             float2 range = CascadeRange(c);
+            float cellSize = float(1 << c);
+            float2 probeUV = c == 0 ? uv : SnapToGrid(uv, cellSize);
 
             if (c == 0)
             {
@@ -109,7 +111,7 @@ shader RadianceCascades_TextureFX : TextureFX
                     float subAngle = baseAngle + ((float(i) + 0.5) / 4.0 - 0.5) * angularCell;
                     float2 rd = normalize(float2(cos(subAngle) / aspect, sin(subAngle)));
 
-                    float4 result = TraceInterval(probeOrigin, rd, range, c);
+                    float4 result = TraceInterval(probeUV, rd, range, c);
                     cascadeRad += result.rgb + result.a * parentRadiance;
                 }
 
@@ -135,23 +137,7 @@ shader RadianceCascades_TextureFX : TextureFX
         for (int d = 0; d < NumBaseDirections; d++)
         {
             float baseAngle = (float(d) + 0.5) / float(NumBaseDirections) * TAU + jitter;
-
-            // Bilinear probe interpolation: sample the 4 nearest coarse
-            // probes and blend results, eliminating grid discontinuities.
-            float cellPixels = float(1 << (NumCascades - 1));
-            float2 cell = cellPixels / R;
-            float2 probeF = uv / cell - 0.5;
-            float2 probeI = floor(probeF);
-            float2 w = probeF - probeI;
-
-            float3 r00 = TraceProbe((probeI + float2(0.5, 0.5)) * cell, uv, baseAngle, angularCell, aspect);
-            float3 r10 = TraceProbe((probeI + float2(1.5, 0.5)) * cell, uv, baseAngle, angularCell, aspect);
-            float3 r01 = TraceProbe((probeI + float2(0.5, 1.5)) * cell, uv, baseAngle, angularCell, aspect);
-            float3 r11 = TraceProbe((probeI + float2(1.5, 1.5)) * cell, uv, baseAngle, angularCell, aspect);
-
-            float3 blended = lerp(lerp(r00, r10, w.x), lerp(r01, r11, w.x), w.y);
-
-            totalRadiance += blended;
+            totalRadiance += TraceProbe(uv, baseAngle, angularCell, aspect);
         }
 
         totalRadiance /= float(NumBaseDirections);
