@@ -19,7 +19,9 @@ shader JFAStep_TextureFX : TextureFX
     stage override float4 Shading()
     {
         float2 uv = streams.TexCoord;
-        float2 aspect = R / max(R.x, R.y);
+        // _Aspect.yx in Unity = swapped (height/max, width/max)
+        float mxR = max(R.x, R.y);
+        float2 aspectYX = float2(R.y, R.x) / mxR;
 
         float minDist = 1.0;
         float2 minDistUV = float2(0, 0);
@@ -30,7 +32,7 @@ shader JFAStep_TextureFX : TextureFX
             [unroll]
             for (int x = -1; x <= 1; x++)
             {
-                float2 peekUV = uv + float2(x, y) / aspect * StepSize;
+                float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
 
                 float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
                 if (peek.x > 0.0 || peek.y > 0.0)
