@@ -15,14 +15,14 @@
       </p:NodeReference>
       <Patch Id="TbzESM7eepnNLRnH8Ok0Ew">
         <Canvas Id="TewLptUz6fVPAslRAWM09z" CanvasType="Group">
-          <Node Bounds="589,460,265,19" Id="FLQTiGVxxi4N4BilcL0rVK">
+          <Node Bounds="589,460,345,19" Id="FLQTiGVxxi4N4BilcL0rVK">
             <p:NodeReference LastCategoryFullName="Stride.Textures" LastDependency="VL.Stride.Rendering.EffectShaderNodes (C:\VL\VL.Radiosity)">
               <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
               <Choice Kind="ProcessNode" Name="RadianceCascades" />
             </p:NodeReference>
             <Pin Id="IFQEqEuojAbONbxyFELjpP" Name="Input" Kind="InputPin" />
-            <Pin Id="MuQ0O207b8sPebVx8b0bO9" Name="Always Generate Mips for Input" Kind="InputPin" IsHidden="true" />
-            <Pin Id="HcjDkrhTmljMg2QwIh8kFs" Name="Sampler" Kind="InputPin" IsHidden="true" />
+            <Pin Id="AWxO2UGbUSbOiZLSZHnIsZ" Name="Always Generate Mips for Input" Kind="InputPin" IsHidden="true" />
+            <Pin Id="Pl1w5y6zkTbMrWfxPRLARh" Name="Sampler" Kind="InputPin" IsHidden="true" />
             <Pin Id="UNHHZKAzbMPPKEb3bptFt5" Name="Input 2" Kind="InputPin" />
             <Pin Id="SdYN0pSovuqMZZ2xctBkWn" Name="Num Base Directions" Kind="InputPin" />
             <Pin Id="I2x39yrNKNvObVkzFsnJzL" Name="March Steps" Kind="InputPin" />
@@ -47,7 +47,7 @@
               <Choice Kind="ProcessAppFlag" Name="TextureWindow" />
             </p:NodeReference>
             <Pin Id="FofrufFxa9qOZxKkjLYVMm" Name="Node Context" Kind="InputPin" IsHidden="true" />
-            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="1852, 11, 1545, 898" IsHidden="true" />
+            <Pin Id="KZ5X0f7A1ZdM2zMFoCd3Qw" Name="Bounds" Kind="InputPin" DefaultValue="1852, 11, 1545, 929" IsHidden="true" />
             <Pin Id="RLEOWAnYkCHMvUxVkl3sCt" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
             <Pin Id="RPlnnAN4nu9NP3B0x2ZhOl" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
             <Pin Id="KdvQdF3HMyqPcd0sQz6Gn4" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
@@ -507,7 +507,7 @@
               <Choice Kind="TypeFlag" Name="Float32" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="JYePmCua9GOLxc0gBvu5iN" Comment="Num Directions" Bounds="631,241,35,15" ShowValueBox="true" isIOBox="true" Value="8">
+          <Pad Id="JYePmCua9GOLxc0gBvu5iN" Comment="Num Directions" Bounds="631,241,35,15" ShowValueBox="true" isIOBox="true" Value="4">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Integer32" />
             </p:TypeAnnotation>
@@ -672,7 +672,7 @@
               <Choice Kind="TypeFlag" Name="PixelFormat" />
             </p:TypeAnnotation>
           </Pad>
-          <Pad Id="ABacsKiFo9pQXqYT6NvzlD" Comment="Mip Scale" Bounds="897,371,35,15" ShowValueBox="true" isIOBox="true" Value="0.7">
+          <Pad Id="ABacsKiFo9pQXqYT6NvzlD" Comment="Mip Scale" Bounds="897,371,35,15" ShowValueBox="true" isIOBox="true" Value="0.73">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="TypeFlag" Name="Float32" />
             </p:TypeAnnotation>

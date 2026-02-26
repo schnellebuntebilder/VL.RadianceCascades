@@ -1,6 +1,6 @@
 [TextureSource]
 
-shader RCCascade_TextureFX : TextureFX
+shader RCCascader_TextureFX : TextureFX
 {
     // Multi-pass radiance cascade — traces ONE cascade level per pass.
     //
@@ -149,16 +149,17 @@ shader RCCascade_TextureFX : TextureFX
                 );
 
                 // Bilinear: sample 4 nearest parent probes
-                float2 base = parentBlock2D * parentBlockDim;
+                float2 baseValue = parentBlock2D * parentBlockDim;
 
                 float2 bpf = parentPos - 0.5;
                 float2 bpi = floor(bpf);
                 float2 bw = bpf - bpi;
 
-                float2 uv00 = (base + clamp(bpi + float2(0, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-                float2 uv10 = (base + clamp(bpi + float2(1, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-                float2 uv01 = (base + clamp(bpi + float2(0, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
-                float2 uv11 = (base + clamp(bpi + float2(1, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+
+                float2 uv00 = (baseValue + clamp(bpi + float2(0, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+                float2 uv10 = (baseValue + clamp(bpi + float2(1, 0), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+                float2 uv01 = (baseValue + clamp(bpi + float2(0, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
+                float2 uv11 = (baseValue + clamp(bpi + float2(1, 1), 0.5, parentBlockDim - 0.5) + 0.5) / res;
 
                 float4 s00 = Texture2.SampleLevel(Sampler1, uv00, 0);
                 float4 s10 = Texture2.SampleLevel(Sampler1, uv10, 0);
