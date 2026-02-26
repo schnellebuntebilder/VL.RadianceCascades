@@ -13,13 +13,20 @@ shader JFAStep_TextureFX : TextureFX
     //   Pass 2: StepSize = 0.125
     //   ...etc for ceil(log(max(width,height))) passes
 
+    // Clamp sampler to prevent wrap-around artifacts at texture edges
+    SamplerState ClampPointSampler
+    {
+        Filter = MIN_MAG_MIP_POINT;
+        AddressU = Clamp;
+        AddressV = Clamp;
+    };
+
     float2 R = ViewSize;
     float StepSize = 0.5;
 
     stage override float4 Shading()
     {
         float2 uv = streams.TexCoord;
-        // _Aspect.yx in Unity = swapped (height/max, width/max)
         float mxR = max(R.x, R.y);
         float2 aspectYX = float2(R.y, R.x) / mxR;
 
@@ -33,10 +40,9 @@ shader JFAStep_TextureFX : TextureFX
             for (int x = -1; x <= 1; x++)
             {
                 float2 peekUV = uv + float2(x, y) * aspectYX * StepSize;
-                peekUV = saturate(peekUV);
 
-                float2 peek = Texture0.SampleLevel(Sampler0, peekUV, 0).rg;
-                if (peek.x > 0.0 || peek.y > 0.0)
+                float2 peek = Texture0.SampleLevel(ClampPointSampler, peekUV, 0).rg;
+                if (all(peek))
                 {
                     float2 dir = peek - uv;
                     float dist = dot(dir, dir);
