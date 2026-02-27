@@ -28,12 +28,21 @@ shader RCGMShaders_TextureFX : TextureFX
     float RayInterval = 2.0;
     int MarchSteps = 64;
     bool LinearAccumulation = true;
+    float AngleJitter = 0.0;
+    bool UseBilinearFix = false;
 
     #define TAU 6.28318530718
     #define EPS 0.0001
 
     float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
     float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
+
+    float hash12(float2 p)
+    {
+        float3 p3 = frac(float3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return frac((p3.x + p3.y) * p3.z);
+    }
 
     // Raymarch in pixel space. origin/delta in pixel coords; converts to UV for lookups.
     // Matches GMShaders structure: sample SDF, advance, then check hit/bounds.
@@ -75,7 +84,7 @@ shader RCGMShaders_TextureFX : TextureFX
         return float4(0, 0, 0, 1);
     }
 
-    // Merge with cascade N+1 using direction-first layout
+    // Merge with cascade N+1 using direction-first bilinear hardware interpolation
     float4 Merge(float4 radiance, float rayIndex, float2 extent, float2 probe)
     {
         if (radiance.a == 0.0 || CascadeLevel >= NumCascades - 1)
@@ -91,29 +100,57 @@ shader RCGMShaders_TextureFX : TextureFX
         return radiance + merged;
     }
 
+    // Merge with nearest N+1 probe (no interpolation) — used by BilinearFix per-probe
+    float4 MergeNearest(float4 radiance, float rayIndex, float2 probeN1)
+    {
+        if (radiance.a == 0.0 || CascadeLevel >= NumCascades - 1)
+            return float4(radiance.rgb, 1.0 - radiance.a);
+
+        float angularN1 = pow(2.0, float(CascadeLevel) + 1.0);
+        float2 extentN1 = floor(R / angularN1);
+        float2 dirBlockN1 = float2(fmod(rayIndex, angularN1), floor(rayIndex / angularN1)) * extentN1;
+        dirBlockN1 += clamp(probeN1 + 0.5, float2(0.5, 0.5), extentN1 - 0.5);
+
+        return Texture2.SampleLevel(ClampLinearSampler, dirBlockN1 / R, 0);
+    }
+
     stage override float4 Shading()
     {
         float2 coord = floor(streams.TexCoord * R);
         float sqrAngular = pow(2.0, float(CascadeLevel));
         float2 extent = floor(R / sqrAngular);
 
-        // probe.xy = position within direction block, probe.zw = direction block index
         float2 probePos = fmod(coord, extent);
         float2 probeDir = floor(coord / extent);
 
         // Interval: geometric sequence
-        float interval = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
-        float limit = RayInterval * pow(4.0, float(CascadeLevel));
+        float intervalOffset = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
+        float intervalLimit = RayInterval * pow(4.0, float(CascadeLevel));
         // Light leak fix: extend range by next cascade's probe spacing diagonal
-        limit += pow(2.0, float(CascadeLevel) + 1.0) * 1.41421356;
+        intervalLimit += pow(2.0, float(CascadeLevel) + 1.0) * 1.41421356;
 
         // Probe spacing in pixel coords
         float probeSpacingPx = pow(2.0, float(CascadeLevel));
+        float probeSpacingN1 = pow(2.0, float(CascadeLevel) + 1.0);
         float2 origin = (probePos + 0.5) * probeSpacingPx;
 
         // Angular: total actual rays = sqrAngular^2 * 4
         float angular = sqrAngular * sqrAngular * 4.0;
         float rayIndex = (probeDir.x + probeDir.y * sqrAngular) * 4.0;
+
+        // BilinearFix: get 4 surrounding N+1 probes and bilinear weights
+        float2 bilinearProbes[4];
+        float2 bilinearWeight = float2(0, 0);
+        if (UseBilinearFix)
+        {
+            float2 probeN1 = floor((probePos - 1.0) / 2.0);
+            bilinearProbes[0] = probeN1 + float2(0, 0);
+            bilinearProbes[1] = probeN1 + float2(1, 0);
+            bilinearProbes[2] = probeN1 + float2(0, 1);
+            bilinearProbes[3] = probeN1 + float2(1, 1);
+            float2 texelN1_N = floor(probeN1 * 2.0 + 1.0);
+            bilinearWeight = 0.25 + (probePos - texelN1_N) * 0.5;
+        }
 
         float4 result = float4(0, 0, 0, 0);
 
@@ -122,13 +159,47 @@ shader RCGMShaders_TextureFX : TextureFX
         {
             float preavg = rayIndex + float(i);
             float theta = (preavg + 0.5) * (TAU / angular);
+
+            // AngleJitter: per-pixel noise to reduce angular banding
+            if (AngleJitter > 0.0)
+            {
+                float noise = hash12(coord + float2(preavg, float(CascadeLevel)));
+                theta += (noise - 0.5) * (TAU / angular) * AngleJitter;
+            }
+
             float2 delta = float2(cos(theta), sin(theta));
 
-            // Raymarch starting from interval offset
-            float2 rayStart = origin + delta * interval;
-            float4 radiance = Raymarch(rayStart, delta, limit);
+            // Ray forking: start from parent cascade's direction for continuous intervals
+            float thetaNm1 = (floor(preavg / 4.0) + 0.5) * (TAU / (angular / 4.0));
+            float2 deltaNm1 = float2(cos(thetaNm1), sin(thetaNm1));
+            float2 rayStart = origin + deltaNm1 * intervalOffset;
 
-            result += Merge(radiance, preavg, extent, probePos) * 0.25;
+            if (UseBilinearFix)
+            {
+                // Cast 4 rays, one reprojected to each bilinear N+1 probe
+                float4 samples[4];
+                [unroll]
+                for (int j = 0; j < 4; j++)
+                {
+                    float2 originN1 = (bilinearProbes[j] + 0.5) * probeSpacingN1;
+                    float2 rayEnd = originN1 + delta * (intervalOffset + intervalLimit);
+                    float2 rayDir = normalize(rayEnd - rayStart);
+                    float rayLen = length(rayEnd - rayStart);
+
+                    samples[j] = Raymarch(rayStart, rayDir, rayLen);
+                    samples[j] = MergeNearest(samples[j], preavg, bilinearProbes[j]);
+                }
+
+                // Manual bilinear interpolation
+                float4 top = lerp(samples[0], samples[1], bilinearWeight.x);
+                float4 bot = lerp(samples[2], samples[3], bilinearWeight.x);
+                result += lerp(top, bot, bilinearWeight.y) * 0.25;
+            }
+            else
+            {
+                float4 radiance = Raymarch(rayStart, delta, intervalLimit);
+                result += Merge(radiance, preavg, extent, probePos) * 0.25;
+            }
         }
 
         if (CascadeLevel == 0 && LinearAccumulation)
