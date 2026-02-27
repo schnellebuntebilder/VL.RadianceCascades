@@ -7,7 +7,7 @@ shader RCUnityComposite_TextureFX : TextureFX
     // Texture0: Scene RGBA (RGB = emissive color)
     // Texture1: Cascade 0 output (from RCUnity at level 0)
 
-    float Exposure = 1.0;
+    float Exposure = 6.283;
 
     stage override float4 Shading()
     {
