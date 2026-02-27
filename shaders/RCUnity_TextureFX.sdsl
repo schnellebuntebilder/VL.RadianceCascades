@@ -78,15 +78,19 @@ shader RCUnity_TextureFX : TextureFX
 
     stage override float4 Shading()
     {
-        float2 pixelIndex = min(floor(streams.TexCoord * R), R - 1);
+        int2 iR = int2(R);
+        int2 pixelIndex = min(int2(floor(streams.TexCoord * R)), iR - 1);
 
         int blockSqrt = 1 << CascadeLevel;
 
-        float2 blockDim = R / float(blockSqrt);
-        float2 block2DIndex = floor(pixelIndex / blockDim);
+        // Use integer division for exact block mapping at any resolution
+        int2 blockDimI = iR / blockSqrt;
+        float2 blockDim = float2(blockDimI);
+        int2 block2DIndexI = pixelIndex / blockDimI;
+        float2 block2DIndex = float2(block2DIndexI);
         float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
 
-        float2 coordsInBlock = fmod(pixelIndex, blockDim);
+        float2 coordsInBlock = float2(pixelIndex - block2DIndexI * blockDimI);
 
         // Early-out debug modes
         if (DebugMode == 1)
