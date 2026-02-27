@@ -50,11 +50,12 @@ shader RCGMShaders_TextureFX : TextureFX
     float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
     float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
 
-    float4 Raymarch(float2 originPx, float theta, float offsetPx, float rangePx, float sdfScale)
+    float4 Raymarch(float2 originPx, float theta, float offsetPx, float rangePx)
     {
         float2 texel = 1.0 / RenderSize;
         float2 delta = float2(cos(theta), sin(theta));
         float2 ray = (originPx + delta * offsetPx) * texel;
+        float rangePxSq = rangePx * rangePx;
         float rd = 0.0;
 
         [loop]
@@ -63,19 +64,21 @@ shader RCGMShaders_TextureFX : TextureFX
             if (ray.x < 0.0 || ray.x > 1.0 || ray.y < 0.0 || ray.y > 1.0)
                 break;
 
-            float df = Texture1.SampleLevel(ClampLinearSampler, ray, 0).r;
+            // SDF is in UV space; convert to pixel distance
+            float dfUV = Texture1.SampleLevel(ClampLinearSampler, ray, 0).r;
+            float dfPx = dfUV * length(RenderSize);
 
-            rd += df * sdfScale;
-            ray += delta * df * sdfScale * texel;
+            rd += dfPx;
+            ray += delta * dfPx * texel;
 
             if (rd >= rangePx || any(floor(ray) != float2(0.0, 0.0)))
                 break;
 
             // Light volume fix: skip rays starting inside emitters for higher cascades
-            if (df <= EPS && rd <= EPS && CascadeLevel > 0)
+            if (dfPx <= 0.5 && rd <= 0.5 && CascadeLevel > 0)
                 return float4(0, 0, 0, 0);
 
-            if (df <= EPS)
+            if (dfPx <= 0.5)
             {
                 float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
                 if (LinearAccumulation)
@@ -137,7 +140,6 @@ shader RCGMShaders_TextureFX : TextureFX
         float thetaScalar = TAU / (totalAngular * 4.0);
 
         // Interval calculation (geometric sequence, pixel space)
-        float sdfScale = length(RenderSize);
         float offsetPx = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
         float rangePx = RayInterval * pow(4.0, float(CascadeLevel));
         // Light leak fix: overlap by N+1 probe spacing diagonal
@@ -152,7 +154,7 @@ shader RCGMShaders_TextureFX : TextureFX
             float idx = actualIndex + float(i);
             float theta = (idx + 0.5) * thetaScalar;
 
-            float4 radiance = Raymarch(originPx, theta, offsetPx, rangePx, sdfScale);
+            float4 radiance = Raymarch(originPx, theta, offsetPx, rangePx);
             result += Merge(radiance, idx, probe, dirBlockSize, R) * 0.25;
         }
 
