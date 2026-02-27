@@ -7,6 +7,8 @@ shader RCUnity_TextureFX : TextureFX
     // Texture0: Scene RGBA (RGB = emissive color)
     // Texture1: Distance field (from JFA pipeline)
     // Texture2: Parent cascade output (previous pass, or black for top cascade)
+    //
+    // NOTE: Resolution must be power-of-2 (e.g., 512, 1024, 2048)
 
     SamplerState ClampPointSampler
     {
@@ -27,12 +29,6 @@ shader RCUnity_TextureFX : TextureFX
     int NumCascades = 4;
     float RayRange = 1.0;
     int MarchSteps = 32;
-    bool DisableMerge = false;
-    bool DebugMergeUV = false;
-    bool DebugMergeSample = false;
-    bool UsePointMerge = false;
-    // Debug: 0=off, 1=show Texture2 at own UV, 2=show rayOrigin as color, 3=show range
-    int DebugMode = 0;
 
     #define TAU 6.28318530718
 
@@ -78,7 +74,6 @@ shader RCUnity_TextureFX : TextureFX
 
     stage override float4 Shading()
     {
-        // NOTE: Resolution should be power-of-2 for correct results (e.g., 512, 1024)
         float2 pixelIndex = floor(streams.TexCoord * R);
 
         int blockSqrt = 1 << CascadeLevel;
@@ -88,77 +83,6 @@ shader RCUnity_TextureFX : TextureFX
         float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
 
         float2 coordsInBlock = fmod(pixelIndex, blockDim);
-
-        // Early-out debug modes
-        if (DebugMode == 1)
-        {
-            // Show raw Texture2 at this pixel's own UV
-            return Texture2.SampleLevel(ClampPointSampler, streams.TexCoord, 0);
-        }
-        if (DebugMode == 2)
-        {
-            // Show rayOrigin — should be smooth gradient 0..1 within each block
-            float2 rayOrig = (coordsInBlock + 0.5) * float(blockSqrt) / R;
-            return float4(rayOrig, 0, 1);
-        }
-        if (DebugMode == 3)
-        {
-            // Show ray range for this cascade level
-            float2 rng = CalculateRayRange(CascadeLevel, NumCascades);
-            return float4(rng.x, rng.y, 0, 1);
-        }
-        if (DebugMode == 4)
-        {
-            // Show blockIndex as hue per block
-            return float4(block2DIndex.x / float(blockSqrt), block2DIndex.y / float(blockSqrt), float(CascadeLevel) / float(NumCascades), 1);
-        }
-        if (DebugMode == 5)
-        {
-            // Show coordsInBlock normalized — should be smooth 0..1 gradient in each block
-            return float4(coordsInBlock / blockDim, 0, 1);
-        }
-        if (DebugMode == 6)
-        {
-            float2 position = coordsInBlock * 0.5 + 0.25;
-            float firstAngleIndex = blockIndex * 4.0;
-            float2 positionOffset = float2(
-                fmod(firstAngleIndex, float(blockSqrt * 2)),
-                floor(firstAngleIndex / float(blockSqrt * 2))
-            );
-            position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
-            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
-            return Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
-        }
-        if (DebugMode == 7)
-        {
-            float2 position = coordsInBlock * 0.5 + 0.25;
-            float firstAngleIndex = blockIndex * 4.0;
-            float2 positionOffset = float2(
-                fmod(firstAngleIndex, float(blockSqrt * 2)),
-                floor(firstAngleIndex / float(blockSqrt * 2))
-            );
-            position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
-            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
-            float oob = (mergeUV.x < 0 || mergeUV.x > 1 || mergeUV.y < 0 || mergeUV.y > 1) ? 1.0 : 0.0;
-            return float4(mergeUV, oob, 1);
-        }
-        if (DebugMode == 8)
-        {
-            // Show just raymarched radiance for all 4 dirs, NO merge
-            float4 res = float4(0,0,0,0);
-            float2 ro = (coordsInBlock + 0.5) * float(blockSqrt) / R;
-            float2 rng = CalculateRayRange(CascadeLevel, NumCascades);
-            for (int d = 0; d < 4; d++)
-            {
-                float as2 = TAU / float(blockSqrt * blockSqrt * 4);
-                float ai = blockIndex * 4.0 + float(d);
-                float a = (ai + 0.5) * as2;
-                float2 rd = float2(cos(a), sin(a));
-                float4 rad = SampleRadianceSDF(ro, rd, rng);
-                res += rad * 0.25;
-            }
-            return res;
-        }
 
         float4 finalResult = float4(0, 0, 0, 0);
 
@@ -177,7 +101,7 @@ shader RCUnity_TextureFX : TextureFX
 
             if (radiance.a != 0.0)
             {
-                if (!DisableMerge && CascadeLevel < NumCascades - 1)
+                if (CascadeLevel < NumCascades - 1)
                 {
                     float2 position = coordsInBlock * 0.5 + 0.25;
                     float2 positionOffset = float2(
@@ -188,25 +112,7 @@ shader RCUnity_TextureFX : TextureFX
                     position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
 
                     float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
-
-                    if (DebugMergeUV)
-                    {
-                        finalResult += float4(mergeUV, 0, 1) * 0.25;
-                        continue;
-                    }
-
-                    float4 rad;
-                    if (UsePointMerge)
-                        rad = Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
-                    else
-                        rad = Texture2.SampleLevel(ClampLinearSampler, mergeUV, 0);
-
-                    if (DebugMergeSample)
-                    {
-                        // Show what we actually read from the parent
-                        finalResult += rad * 0.25;
-                        continue;
-                    }
+                    float4 rad = Texture2.SampleLevel(ClampLinearSampler, mergeUV, 0);
 
                     radiance.rgb += rad.rgb * radiance.a;
                     radiance.a *= rad.a;
