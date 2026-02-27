@@ -10,21 +10,17 @@ shader RCGMShaders_TextureFX : TextureFX
     //   - Pre-averaging: 4 rays averaged per pixel (75% less memory)
     //   - Light leak fix: interval overlap prevents gaps between cascades
     //   - Light volume fix: higher cascades skip rays starting inside emitters
+    //   - sRGB linear accumulation for correct color blending
     //
-    // Texture0: Scene RGBA (RGB = emissive color, at full render resolution)
-    // Texture1: Distance field (from JFA pipeline, at full render resolution)
+    // Texture0: Scene RGBA (RGB = emissive color)
+    // Texture1: Distance field (from JFA pipeline, UV-space distances)
     // Texture2: Previous cascade output (N+1, or black for top cascade)
     //
     // Process cascades from highest (NumCascades-1) down to 0.
     // Cascade 0 output is the final per-pixel GI radiance.
+    // Use RCUnityComposite to add GI to the scene.
     //
-    // IMPORTANT: The output texture (and Texture2) must be sized:
-    //   width  = RenderWidth / CascadeLinear
-    //   height = RenderHeight / CascadeLinear
-    // E.g. for 1024x1024 render and CascadeLinear=4: cascade textures are 256x256.
-    // The composite pass upscales cascade 0 to screen size (bilinear).
-    //
-    // NOTE: Resolution must be power-of-2 (e.g., 512, 1024, 2048)
+    // NOTE: Resolution must be power-of-2 (e.g., 512, 1024)
 
     SamplerState ClampLinearSampler
     {
@@ -33,14 +29,11 @@ shader RCGMShaders_TextureFX : TextureFX
         AddressV = Clamp;
     };
 
-    // R = cascade texture size (ViewSize), RenderSize = full scene resolution
     float2 R = ViewSize;
-    float2 RenderSize = ViewSize;
 
     int CascadeLevel = 0;
     int NumCascades = 6;
-    float CascadeLinear = 1.0;
-    float RayInterval = 2.0;
+    float RayRange = 1.0;
     int MarchSteps = 64;
     bool LinearAccumulation = true;
 
@@ -50,65 +43,65 @@ shader RCGMShaders_TextureFX : TextureFX
     float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
     float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
 
-    float4 Raymarch(float2 originPx, float theta, float offsetPx, float rangePx)
+    float2 CalculateRayRange(uint idx, uint count)
     {
-        float2 texel = 1.0 / RenderSize;
-        float2 delta = float2(cos(theta), sin(theta));
-        float2 ray = (originPx + delta * offsetPx) * texel;
-        float rangePxSq = rangePx * rangePx;
-        float rd = 0.0;
+        float minR = min(R.x, R.y);
+        float2 normalizedScreen = R / minR;
+        float effectiveRayRange = length(normalizedScreen) * RayRange;
 
-        [loop]
+        float maxValue = float((1 << (count * 2)) - 1);
+        float rangeStart = float((1 << (idx * 2)) - 1);
+        float rangeEnd = float((1 << (idx * 2 + 2)) - 1);
+        return float2(rangeStart, rangeEnd) / maxValue * effectiveRayRange;
+    }
+
+    float4 Raymarch(float2 rayOrigin, float2 rayDirection, float2 rayRange)
+    {
+        float mxR = max(R.x, R.y);
+        float2 aspectYX = float2(R.y, R.x) / mxR;
+        float t = rayRange.x;
+
         for (int i = 0; i < MarchSteps; i++)
         {
-            if (ray.x < 0.0 || ray.x > 1.0 || ray.y < 0.0 || ray.y > 1.0)
+            float2 pos = rayOrigin + t * rayDirection * aspectYX;
+
+            if (t > rayRange.y
+                || pos.x < 0 || pos.y < 0
+                || pos.x > 1 || pos.y > 1)
                 break;
 
-            // SDF is in UV space; convert to pixel distance
-            float dfUV = Texture1.SampleLevel(ClampLinearSampler, ray, 0).r;
-            float dfPx = dfUV * length(RenderSize);
-
-            rd += dfPx;
-            ray += delta * dfPx * texel;
-
-            if (rd >= rangePx || any(floor(ray) != float2(0.0, 0.0)))
-                break;
+            float dist = Texture1.SampleLevel(ClampLinearSampler, pos, 0).r;
 
             // Light volume fix: skip rays starting inside emitters for higher cascades
-            if (dfPx <= 0.5 && rd <= 0.5 && CascadeLevel > 0)
+            if (dist < EPS && t <= rayRange.x + EPS && CascadeLevel > 0)
                 return float4(0, 0, 0, 0);
 
-            if (dfPx <= 0.5)
+            if (dist < EPS)
             {
-                float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
+                float3 col = Texture0.SampleLevel(ClampLinearSampler, pos, 0).rgb;
                 if (LinearAccumulation)
                     col = SRGBToLinear(col);
                 return float4(col, 0.0);
             }
+
+            t += dist;
         }
 
         return float4(0, 0, 0, 1);
     }
 
     // Merge with cascade N+1 using direction-first hardware interpolation (single tap)
-    float4 Merge(float4 radiance, float rayIndex, float2 probe, float2 dirBlockSize, float2 cascadeExtent)
+    float4 Merge(float4 radiance, float rayIndex, float2 probe, float2 dirBlockSize)
     {
-        // If ray hit something or this is the highest cascade, don't merge
         if (radiance.a == 0.0 || CascadeLevel >= NumCascades - 1)
             return float4(radiance.rgb, 1.0 - radiance.a);
 
-        // N+1 cascade has 2x angular resolution per axis
         float angularN1 = pow(2.0, float(CascadeLevel) + 1.0);
-        // N+1 direction blocks are half the size
         float2 sizeN1 = dirBlockSize * 0.5;
-        // Find the direction block in N+1 matching this ray's direction
         float2 probeN1 = float2(fmod(rayIndex, angularN1), floor(rayIndex / angularN1)) * sizeN1;
-        // Probe falls at half-resolution position + 0.25 offset for proper interpolation weight
         float2 interpUV = probe * 0.5 + 0.25;
-        // Clamp away from block edges to prevent interpolation leaking
         float2 clampedUV = max(float2(1.0, 1.0), min(interpUV, sizeN1 - 1.0));
-        // Final lookup position, normalized by cascade extent (not render extent)
-        float2 lookupUV = (probeN1 + clampedUV) / cascadeExtent;
+        float2 lookupUV = (probeN1 + clampedUV) / R;
 
         float4 merged = Texture2.SampleLevel(ClampLinearSampler, lookupUV, 0);
         return radiance + merged;
@@ -118,34 +111,25 @@ shader RCGMShaders_TextureFX : TextureFX
     {
         float2 coord = floor(streams.TexCoord * R);
 
-        // Direction-first layout matching GMShaders exactly
+        // Direction-first layout
         float angular = pow(2.0, float(CascadeLevel));
-        // Probe spacing in pixels of the render scene
-        float2 probeSpacing = float2(CascadeLinear * pow(2.0, float(CascadeLevel)),
-                               CascadeLinear * pow(2.0, float(CascadeLevel)));
-        // Direction block size within cascade texture
         float2 dirBlockSize = R / angular;
-        // Probe position within direction block
         float2 probe = fmod(coord, dirBlockSize);
-        // Ray spatial index
         float2 raypos = floor(streams.TexCoord * angular);
         float preAvgIndex = raypos.x + angular * raypos.y;
 
-        // Probe origin in render pixel space
-        float2 originPx = (probe + 0.5) * probeSpacing;
+        // Probe origin in UV space (same as Unity approach)
+        float probeSpacingPx = pow(2.0, float(CascadeLevel));
+        float2 rayOrigin = (probe + 0.5) * probeSpacingPx / R;
 
-        // Angular parameters (pre-averaged: index * 4 to get actual ray index)
+        // Ray range (same as Unity approach)
+        float2 range = CalculateRayRange(CascadeLevel, NumCascades);
+
+        // Angular parameters (pre-averaged: index * 4)
         float totalAngular = angular * angular;
         float actualIndex = preAvgIndex * 4.0;
         float thetaScalar = TAU / (totalAngular * 4.0);
 
-        // Interval calculation (geometric sequence, pixel space)
-        float offsetPx = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
-        float rangePx = RayInterval * pow(4.0, float(CascadeLevel));
-        // Light leak fix: overlap by N+1 probe spacing diagonal
-        rangePx += length(probeSpacing * 2.0);
-
-        // Cast 4 rays and pre-average
         float4 result = float4(0, 0, 0, 0);
 
         [unroll]
@@ -153,12 +137,12 @@ shader RCGMShaders_TextureFX : TextureFX
         {
             float idx = actualIndex + float(i);
             float theta = (idx + 0.5) * thetaScalar;
+            float2 rayDirection = float2(cos(theta), sin(theta));
 
-            float4 radiance = Raymarch(originPx, theta, offsetPx, rangePx);
-            result += Merge(radiance, idx, probe, dirBlockSize, R) * 0.25;
+            float4 radiance = Raymarch(rayOrigin, rayDirection, range);
+            result += Merge(radiance, idx, probe, dirBlockSize) * 0.25;
         }
 
-        // At cascade 0, convert back from linear to sRGB for display
         if (CascadeLevel == 0 && LinearAccumulation)
             result.rgb = LinearToSRGB(result.rgb);
 
