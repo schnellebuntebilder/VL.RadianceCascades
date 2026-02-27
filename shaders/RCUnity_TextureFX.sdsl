@@ -78,21 +78,16 @@ shader RCUnity_TextureFX : TextureFX
 
     stage override float4 Shading()
     {
-        // Snap effective resolution to largest multiple of max blockSqrt
-        int maxBlockSqrt = 1 << (NumCascades - 1);
-        float2 effectiveR = floor(R / float(maxBlockSqrt)) * float(maxBlockSqrt);
-
-        float2 pixelIndex = min(floor(streams.TexCoord * R), R - 1);
-        // Clamp pixels to effective area
-        pixelIndex = min(pixelIndex, effectiveR - 1);
+        // NOTE: Resolution should be power-of-2 for correct results (e.g., 512, 1024)
+        float2 pixelIndex = floor(streams.TexCoord * R);
 
         int blockSqrt = 1 << CascadeLevel;
 
-        float2 blockDim = effectiveR / float(blockSqrt);
+        float2 blockDim = R / float(blockSqrt);
         float2 block2DIndex = floor(pixelIndex / blockDim);
         float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
 
-        float2 coordsInBlock = pixelIndex - block2DIndex * blockDim;
+        float2 coordsInBlock = fmod(pixelIndex, blockDim);
 
         // Early-out debug modes
         if (DebugMode == 1)
@@ -131,7 +126,7 @@ shader RCUnity_TextureFX : TextureFX
                 floor(firstAngleIndex / float(blockSqrt * 2))
             );
             position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
-            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / effectiveR;
+            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
             return Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
         }
         if (DebugMode == 7)
@@ -143,7 +138,7 @@ shader RCUnity_TextureFX : TextureFX
                 floor(firstAngleIndex / float(blockSqrt * 2))
             );
             position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
-            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / effectiveR;
+            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
             float oob = (mergeUV.x < 0 || mergeUV.x > 1 || mergeUV.y < 0 || mergeUV.y > 1) ? 1.0 : 0.0;
             return float4(mergeUV, oob, 1);
         }
@@ -192,7 +187,7 @@ shader RCUnity_TextureFX : TextureFX
 
                     position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
 
-                    float2 mergeUV = (position + positionOffset * blockDim * 0.5) / effectiveR;
+                    float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
 
                     if (DebugMergeUV)
                     {
