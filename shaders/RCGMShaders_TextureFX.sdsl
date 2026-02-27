@@ -35,32 +35,35 @@ shader RCGMShaders_TextureFX : TextureFX
     float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
     float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
 
-    // Raymarch in pixel space, matching GMShaders Final exactly.
-    // origin/delta are in pixel coords; converts to UV for texture lookups.
-    float4 Raymarch(float2 origin, float2 delta, float interval)
+    // Raymarch in pixel space. origin/delta in pixel coords; converts to UV for lookups.
+    // Matches GMShaders structure: sample SDF, advance, then check hit/bounds.
+    float4 Raymarch(float2 origin, float2 delta, float rangeLimit)
     {
-        float scale = length(R);
+        // Our SDF stores UV-space distance; multiply by R.x to get pixel distance.
+        // (Assumes square texture — for non-square, UV distance is anisotropic.)
+        float scale = R.x;
         float2 texel = 1.0 / R;
-
+        float2 ray = origin * texel;
         float rd = 0.0;
+
         [loop]
         for (int i = 0; i < MarchSteps; i++)
         {
-            float2 ray = (origin + delta * rd) * texel;
-
-            if (rd >= interval || any(floor(ray) != float2(0.0, 0.0)))
-                break;
-
-            if (ray.x < 0.0 || ray.x > 1.0 || ray.y < 0.0 || ray.y > 1.0)
-                break;
-
             float df = Texture1.SampleLevel(ClampLinearSampler, ray, 0).r;
-            // Our SDF is UV-space distance; scale to pixel distance
             float dfPx = df * scale;
 
             rd += dfPx;
+            ray += delta * dfPx * texel;
 
-            if (dfPx <= EPS * scale)
+            if (rd >= rangeLimit || any(floor(ray) != float2(0.0, 0.0)))
+                break;
+
+            // Light volume fix: emitters only emit from their surface, not their volume.
+            // Higher cascades starting inside an emitter should not pick up its color.
+            if (df < EPS && rd < EPS && CascadeLevel > 0)
+                return float4(0, 0, 0, 0);
+
+            if (df < EPS)
             {
                 float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
                 if (LinearAccumulation)
@@ -81,7 +84,8 @@ shader RCGMShaders_TextureFX : TextureFX
         float angularN1 = pow(2.0, float(CascadeLevel) + 1.0);
         float2 extentN1 = floor(R / angularN1);
         float2 interpN1 = float2(fmod(rayIndex, angularN1), floor(rayIndex / angularN1)) * extentN1;
-        interpN1 += clamp(probe * 0.5 + 0.25, float2(0.5, 0.5), extentN1 - 0.5);
+        // Clamp with 1-texel margin to prevent bilinear bleeding across direction blocks
+        interpN1 += clamp(probe * 0.5 + 0.25, float2(1.0, 1.0), extentN1 - 1.0);
 
         float4 merged = Texture2.SampleLevel(ClampLinearSampler, interpN1 / R, 0);
         return radiance + merged;
@@ -100,6 +104,8 @@ shader RCGMShaders_TextureFX : TextureFX
         // Interval: geometric sequence
         float interval = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
         float limit = RayInterval * pow(4.0, float(CascadeLevel));
+        // Light leak fix: extend range by next cascade's probe spacing diagonal
+        limit += pow(2.0, float(CascadeLevel) + 1.0) * 1.41421356;
 
         // Probe spacing in pixel coords
         float probeSpacingPx = pow(2.0, float(CascadeLevel));
