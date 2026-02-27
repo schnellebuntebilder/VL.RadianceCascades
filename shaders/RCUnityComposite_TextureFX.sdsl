@@ -15,9 +15,7 @@ shader RCUnityComposite_TextureFX : TextureFX
 
         float3 gi = Texture1.SampleLevel(Sampler1, uv, 0).rgb;
         float3 scene = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
-        float3 color = scene + gi;
-
-        color *= Exposure;
+        float3 color = scene + gi * Exposure;
         color = color / (1.0 + color);
 
         return float4(color, 1.0);
