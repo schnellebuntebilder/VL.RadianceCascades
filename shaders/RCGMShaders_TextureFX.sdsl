@@ -170,12 +170,15 @@ shader RCGMShaders_TextureFX : TextureFX
         }
 
         // Normal map: sample once per pixel at cascade 0
-        float2 surfaceNormal2D = float2(0, 0);
+        // Standard tangent-space normal map: R=X, G=Y, B=Z where (0.5,0.5,1) = flat
+        float3 surfaceNormal = float3(0, 0, 1);
         if (UseNormalMap && CascadeLevel == 0)
         {
             float2 probeUV = origin / R;
-            float2 nmap = Texture3.SampleLevel(ClampLinearSampler, probeUV, 0).rg;
-            surfaceNormal2D = normalize(lerp(float2(0, 0), nmap * 2.0 - 1.0, NormalStrength));
+            float3 nmap = Texture3.SampleLevel(ClampLinearSampler, probeUV, 0).rgb;
+            float3 n = nmap * 2.0 - 1.0; // decode from [0,1] to [-1,1]
+            n.xy *= NormalStrength;
+            surfaceNormal = normalize(n);
         }
 
         float4 result = float4(0, 0, 0, 0);
@@ -220,7 +223,7 @@ shader RCGMShaders_TextureFX : TextureFX
                 float4 bot = lerp(samples[2], samples[3], bilinearWeight.x);
                 float4 rad = lerp(top, bot, bilinearWeight.y);
                 if (UseNormalMap && CascadeLevel == 0)
-                    rad.rgb *= saturate(dot(surfaceNormal2D, -delta));
+                    rad.rgb *= saturate(dot(surfaceNormal, float3(-delta, 0)));
                 result += rad * 0.25;
             }
             else if (MergeMode == 1)
@@ -234,7 +237,7 @@ shader RCGMShaders_TextureFX : TextureFX
                 float4 radiance = Raymarch(rayStart, rayDir, rayLen, intervalOffset);
                 radiance = MergeNearest(radiance, preavg, interlacedProbe);
                 if (UseNormalMap && CascadeLevel == 0)
-                    radiance.rgb *= saturate(dot(surfaceNormal2D, -delta));
+                    radiance.rgb *= saturate(dot(surfaceNormal, float3(-delta, 0)));
                 result += radiance * 0.25;
             }
             else
@@ -243,7 +246,7 @@ shader RCGMShaders_TextureFX : TextureFX
                 float4 radiance = Raymarch(rayStart, delta, intervalLimit, intervalOffset);
                 radiance = Merge(radiance, preavg, extent, probePos);
                 if (UseNormalMap && CascadeLevel == 0)
-                    radiance.rgb *= saturate(dot(surfaceNormal2D, -delta));
+                    radiance.rgb *= saturate(dot(surfaceNormal, float3(-delta, 0)));
                 result += radiance * 0.25;
             }
         }
