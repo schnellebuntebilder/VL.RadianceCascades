@@ -11,15 +11,20 @@ shader RCGMShaders_TextureFX : TextureFX
     //   - Light leak fix: interval overlap prevents gaps between cascades
     //   - Light volume fix: higher cascades skip rays starting inside emitters
     //
-    // Texture0: Scene RGBA (RGB = emissive color)
-    // Texture1: Distance field (from JFA pipeline, UV-space distances)
+    // Texture0: Scene RGBA (RGB = emissive color, at full render resolution)
+    // Texture1: Distance field (from JFA pipeline, at full render resolution)
     // Texture2: Previous cascade output (N+1, or black for top cascade)
     //
     // Process cascades from highest (NumCascades-1) down to 0.
     // Cascade 0 output is the final per-pixel GI radiance.
-    // Use RCUnityComposite to add GI to the scene.
     //
-    // NOTE: Resolution must be power-of-2 square (e.g., 512×512, 1024×1024)
+    // IMPORTANT: The output texture (and Texture2) must be sized:
+    //   width  = RenderWidth / CascadeLinear
+    //   height = RenderHeight / CascadeLinear
+    // E.g. for 1024x1024 render and CascadeLinear=4: cascade textures are 256x256.
+    // The composite pass upscales cascade 0 to screen size (bilinear).
+    //
+    // NOTE: Resolution must be power-of-2 (e.g., 512, 1024, 2048)
 
     SamplerState ClampLinearSampler
     {
@@ -28,10 +33,13 @@ shader RCGMShaders_TextureFX : TextureFX
         AddressV = Clamp;
     };
 
+    // R = cascade texture size (ViewSize), RenderSize = full scene resolution
     float2 R = ViewSize;
+    float2 RenderSize = ViewSize;
 
     int CascadeLevel = 0;
     int NumCascades = 6;
+    float CascadeLinear = 1.0;
     float RayInterval = 2.0;
     int MarchSteps = 64;
     bool LinearAccumulation = true;
@@ -42,10 +50,11 @@ shader RCGMShaders_TextureFX : TextureFX
     float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
     float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
 
-    float4 Raymarch(float2 originUV, float theta, float offsetUV, float rangeUV)
+    float4 Raymarch(float2 originPx, float theta, float offsetPx, float rangePx, float sdfScale)
     {
+        float2 texel = 1.0 / RenderSize;
         float2 delta = float2(cos(theta), sin(theta));
-        float2 ray = originUV + delta * offsetUV;
+        float2 ray = (originPx + delta * offsetPx) * texel;
         float rd = 0.0;
 
         [loop]
@@ -56,7 +65,10 @@ shader RCGMShaders_TextureFX : TextureFX
 
             float df = Texture1.SampleLevel(ClampLinearSampler, ray, 0).r;
 
-            if (rd >= rangeUV)
+            rd += df * sdfScale;
+            ray += delta * df * sdfScale * texel;
+
+            if (rd >= rangePx || floor(ray) != float2(0.0, 0.0))
                 break;
 
             // Light volume fix: skip rays starting inside emitters for higher cascades
@@ -70,16 +82,13 @@ shader RCGMShaders_TextureFX : TextureFX
                     col = SRGBToLinear(col);
                 return float4(col, 0.0);
             }
-
-            rd += df;
-            ray += delta * df;
         }
 
         return float4(0, 0, 0, 1);
     }
 
     // Merge with cascade N+1 using direction-first hardware interpolation (single tap)
-    float4 Merge(float4 radiance, float rayIndex, float2 probe, float2 dirBlockSize)
+    float4 Merge(float4 radiance, float rayIndex, float2 probe, float2 dirBlockSize, float2 cascadeExtent)
     {
         // If ray hit something or this is the highest cascade, don't merge
         if (radiance.a == 0.0 || CascadeLevel >= NumCascades - 1)
@@ -95,8 +104,8 @@ shader RCGMShaders_TextureFX : TextureFX
         float2 interpUV = probe * 0.5 + 0.25;
         // Clamp away from block edges to prevent interpolation leaking
         float2 clampedUV = max(float2(1.0, 1.0), min(interpUV, sizeN1 - 1.0));
-        // Single hardware-interpolated lookup
-        float2 lookupUV = (probeN1 + clampedUV) / R;
+        // Final lookup position, normalized by cascade extent (not render extent)
+        float2 lookupUV = (probeN1 + clampedUV) / cascadeExtent;
 
         float4 merged = Texture2.SampleLevel(ClampLinearSampler, lookupUV, 0);
         return radiance + merged;
@@ -106,29 +115,33 @@ shader RCGMShaders_TextureFX : TextureFX
     {
         float2 coord = floor(streams.TexCoord * R);
 
-        // Direction-first layout: blocks group probes by direction
+        // Direction-first layout matching GMShaders exactly
         float angular = pow(2.0, float(CascadeLevel));
+        // Probe spacing in pixels of the render scene
+        float2 linear = float2(CascadeLinear * pow(2.0, float(CascadeLevel)),
+                               CascadeLinear * pow(2.0, float(CascadeLevel)));
+        // Direction block size within cascade texture
         float2 dirBlockSize = R / angular;
+        // Probe position within direction block
         float2 probe = fmod(coord, dirBlockSize);
+        // Ray spatial index
         float2 raypos = floor(streams.TexCoord * angular);
         float preAvgIndex = raypos.x + angular * raypos.y;
 
-        // Probe origin in UV space
-        float probeSpacing = pow(2.0, float(CascadeLevel));
-        float2 originUV = (probe + 0.5) * probeSpacing / R;
+        // Probe origin in render pixel space
+        float2 originPx = (probe + 0.5) * linear;
 
         // Angular parameters (pre-averaged: index * 4 to get actual ray index)
         float totalAngular = angular * angular;
         float actualIndex = preAvgIndex * 4.0;
         float thetaScalar = TAU / (totalAngular * 4.0);
 
-        // Interval calculation (geometric sequence, UV space)
-        float invR = 1.0 / R.x;
-        float baseInterval = RayInterval * invR;
-        float offsetUV = baseInterval * (1.0 - pow(4.0, float(CascadeLevel))) / (1.0 - 4.0);
-        float rangeUV = baseInterval * pow(4.0, float(CascadeLevel));
+        // Interval calculation (geometric sequence, pixel space)
+        float sdfScale = length(RenderSize);
+        float offsetPx = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
+        float rangePx = RayInterval * pow(4.0, float(CascadeLevel));
         // Light leak fix: overlap by N+1 probe spacing diagonal
-        rangeUV += pow(2.0, float(CascadeLevel) + 1.0) * 1.414 * invR;
+        rangePx += length(linear * 2.0);
 
         // Cast 4 rays and pre-average
         float4 result = float4(0, 0, 0, 0);
@@ -139,8 +152,8 @@ shader RCGMShaders_TextureFX : TextureFX
             float idx = actualIndex + float(i);
             float theta = (idx + 0.5) * thetaScalar;
 
-            float4 radiance = Raymarch(originUV, theta, offsetUV, rangeUV);
-            result += Merge(radiance, idx, probe, dirBlockSize) * 0.25;
+            float4 radiance = Raymarch(originPx, theta, offsetPx, rangePx, sdfScale);
+            result += Merge(radiance, idx, probe, dirBlockSize, R) * 0.25;
         }
 
         // At cascade 0, convert back from linear to sRGB for display
