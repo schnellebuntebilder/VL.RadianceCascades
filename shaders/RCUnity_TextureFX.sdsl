@@ -28,7 +28,7 @@ shader RCUnity_TextureFX : TextureFX
     int CascadeLevel = 0;
     int NumCascades = 6;
     float RayRange = 1.0;
-    int MarchSteps = 32;
+    int MarchSteps = 64;
 
     #define TAU 6.28318530718
 
@@ -64,11 +64,11 @@ shader RCUnity_TextureFX : TextureFX
                 break;
             }
 
-            float dist = Texture1.SampleLevel(ClampPointSampler, currentPosition, 0).r;
+            float dist = Texture1.SampleLevel(ClampLinearSampler, currentPosition, 0).r;
 
             if (dist < 0.001)
             {
-                hit = float4(Texture0.SampleLevel(ClampPointSampler, currentPosition, 0).rgb, 0);
+                hit = float4(Texture0.SampleLevel(ClampLinearSampler, currentPosition, 0).rgb, 0);
                 break;
             }
 

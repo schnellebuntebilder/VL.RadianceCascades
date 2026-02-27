@@ -109,7 +109,7 @@
               <ControlPoint Id="A0Lfh38JtVoPv9JbVL1Tet" Bounds="691,478" Alignment="Top" />
               <ControlPoint Id="CQkHhRkTumNNSW41VXwGcb" Bounds="691,610" Alignment="Bottom" />
             </Node>
-            <Pad Id="JGayDGZiA44Poelj4t78KZ" Comment="Iteration Count" Bounds="566,397,35,15" ShowValueBox="true" isIOBox="true" Value="14">
+            <Pad Id="JGayDGZiA44Poelj4t78KZ" Comment="Iteration Count" Bounds="566,397,35,15" ShowValueBox="true" isIOBox="true" Value="7">
               <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="TypeFlag" Name="Integer32" />
               </p:TypeAnnotation>
@@ -147,11 +147,6 @@
                   <Pin Id="LJgvzeiNH9yPfDnrh4v8sN" Name="Num Cascades" Kind="InputPin" />
                   <Pin Id="Bl9nDeoCNIsO1c6HzZ3zOz" Name="Ray Range" Kind="InputPin" />
                   <Pin Id="Ppr8ee4VZ24MDKnJSvRnAl" Name="March Steps" Kind="InputPin" />
-                  <Pin Id="Hmxf9SNIN5uOOncNmTOxNp" Name="Disable Merge" Kind="InputPin" />
-                  <Pin Id="R7ax8dtSyeYNSjplciGGd5" Name="Debug Merge UV" Kind="InputPin" />
-                  <Pin Id="VOXlA4Q62TtPIfBCBBGv5l" Name="Debug Merge Sample" Kind="InputPin" />
-                  <Pin Id="NXnNvjfWLMWQGywABswBvo" Name="Use Point Merge" Kind="InputPin" />
-                  <Pin Id="VpWsgtvtQheN9ocJsXtaZz" Name="Debug Mode" Kind="InputPin" />
                   <Pin Id="BrCu4Pi2DGyOxsSbzoThRx" Name="Output Size" Kind="InputPin" />
                   <Pin Id="EeyFQQl9a9yMfLDKvL38g2" Name="Output Format" Kind="InputPin" />
                   <Pin Id="EL6oSIK2WKNNQCcCYyT4w2" Name="Render Format" Kind="InputPin" IsHidden="true" />
@@ -183,12 +178,12 @@
               <ControlPoint Id="TEOxR5gnOsDM0ZxDso2Zko" Bounds="558,1018" Alignment="Bottom" />
               <ControlPoint Id="SeUKfvA9Px7QKL7OOr7xm3" Bounds="719,1018" Alignment="Bottom" />
             </Node>
-            <Pad Id="JG7zwgwTdYgP8o22Ar04Vq" Comment="Iteration Count" Bounds="546,779,35,15" ShowValueBox="true" isIOBox="true" Value="7">
+            <Pad Id="JG7zwgwTdYgP8o22Ar04Vq" Comment="Iteration Count" Bounds="546,779,35,15" ShowValueBox="true" isIOBox="true" Value="6">
               <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="TypeFlag" Name="Integer32" />
               </p:TypeAnnotation>
             </Pad>
-            <Pad Id="L7MWxYNMdZOL8b5th64diW" Comment="Ray Range" Bounds="936,751,35,15" ShowValueBox="true" isIOBox="true" Value="0.75">
+            <Pad Id="L7MWxYNMdZOL8b5th64diW" Comment="Ray Range" Bounds="936,751,35,15" ShowValueBox="true" isIOBox="true" Value="1.41">
               <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="TypeFlag" Name="Float32" />
               </p:TypeAnnotation>
@@ -215,43 +210,6 @@
             <ControlPoint Id="VmHANP0qdOdMhoGg4Dh7qi" Bounds="621,650" />
             <ControlPoint Id="GElL6ODyQp1Lg7j7I4sfAG" Bounds="658,431" />
             <ControlPoint Id="QYZenLuWXWLPm48jMgO1RY" Bounds="638,340" />
-            <Pad Id="BJQ4Pg61HGBNUrmzv4A9YE" Comment="Debug Merge UV" Bounds="1005,880,35,35" ShowValueBox="true" isIOBox="true" Value="False">
-              <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-                <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
-              </p:TypeAnnotation>
-              <p:ValueBoxSettings>
-                <p:buttonmode p:Assembly="VL.UI.Forms" p:Type="VL.HDE.PatchEditor.Editors.ButtonModeEnum">Toggle</p:buttonmode>
-              </p:ValueBoxSettings>
-            </Pad>
-            <Pad Id="HRIHj0SekHdPIXPEpuiQnR" Comment="Disable Merge" Bounds="995,830,35,35" ShowValueBox="true" isIOBox="true" Value="False">
-              <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-                <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
-              </p:TypeAnnotation>
-              <p:ValueBoxSettings>
-                <p:buttonmode p:Assembly="VL.UI.Forms" p:Type="VL.HDE.PatchEditor.Editors.ButtonModeEnum">Toggle</p:buttonmode>
-              </p:ValueBoxSettings>
-            </Pad>
-            <Pad Id="EWFUzY7QmXrQavwi4spdpV" Comment="Debug Merge Sample" Bounds="1097,930,35,35" ShowValueBox="true" isIOBox="true" Value="False">
-              <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-                <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
-              </p:TypeAnnotation>
-              <p:ValueBoxSettings>
-                <p:buttonmode p:Assembly="VL.UI.Forms" p:Type="VL.HDE.PatchEditor.Editors.ButtonModeEnum">Toggle</p:buttonmode>
-              </p:ValueBoxSettings>
-            </Pad>
-            <Pad Id="Db9v3El3P8kLvHfah1vMQd" Comment="Use Point Merge" Bounds="1159,970,35,35" ShowValueBox="true" isIOBox="true" Value="False">
-              <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-                <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
-              </p:TypeAnnotation>
-              <p:ValueBoxSettings>
-                <p:buttonmode p:Assembly="VL.UI.Forms" p:Type="VL.HDE.PatchEditor.Editors.ButtonModeEnum">Toggle</p:buttonmode>
-              </p:ValueBoxSettings>
-            </Pad>
-            <Pad Id="NYLdG7TB4CcPRowsfgQ2JN" Comment="Debug Mode" Bounds="1318,820,35,15" ShowValueBox="true" isIOBox="true" Value="0">
-              <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
-                <Choice Kind="TypeFlag" Name="Integer32" />
-              </p:TypeAnnotation>
-            </Pad>
             <Pad Id="C6Y7jwBg6EQL5lrLxWu1fp" Comment="sdf" Bounds="1121,1330,215,199" ShowValueBox="true" isIOBox="true" />
             <Pad Id="QZBaOg78r7JPFrjsKeh9o3" Comment="resolution" Bounds="1122,1550,35,28" ShowValueBox="true" isIOBox="true" />
             <ControlPoint Id="HlcirGE06XuLfWUgjKDGD3" Bounds="1121,1061" />
@@ -321,12 +279,7 @@
           <Link Id="N9ZRJ7qOR3pLQ91d37UMDK" Ids="DFNgh95u0TZP1KQ7VoOo4G,GElL6ODyQp1Lg7j7I4sfAG" IsHidden="true" />
           <Link Id="Eeuw54O3jR9PWUyfffjUuK" Ids="QYZenLuWXWLPm48jMgO1RY,E8dMf2ZttajMimRoLiAmrg" />
           <Link Id="Qzv892xpfjPNdmAxdWh4uX" Ids="DFNgh95u0TZP1KQ7VoOo4G,QYZenLuWXWLPm48jMgO1RY" IsHidden="true" />
-          <Link Id="DOjmBeKqfQiNc6UG7WCsdC" Ids="BJQ4Pg61HGBNUrmzv4A9YE,R7ax8dtSyeYNSjplciGGd5" />
-          <Link Id="Pz3pGfiraYtNHed7vLDGyu" Ids="HRIHj0SekHdPIXPEpuiQnR,Hmxf9SNIN5uOOncNmTOxNp" />
           <Link Id="ETU30MlQhD7QM6DDabJaXN" Ids="F4SYQnZshKMOSj8Z977CkM,EeyFQQl9a9yMfLDKvL38g2" />
-          <Link Id="N4669GFiDWuOOJoEb4GBev" Ids="EWFUzY7QmXrQavwi4spdpV,VOXlA4Q62TtPIfBCBBGv5l" />
-          <Link Id="AfD2wWxT1oHL67POZzCt5M" Ids="Db9v3El3P8kLvHfah1vMQd,NXnNvjfWLMWQGywABswBvo" />
-          <Link Id="ND7e2hg1NSELguMdGPt5HG" Ids="NYLdG7TB4CcPRowsfgQ2JN,VpWsgtvtQheN9ocJsXtaZz" />
           <Link Id="PCNu4iMWRuLPPdMOoBPPxc" Ids="SRmB9PvpuQvN7TdmFG9RxS,SeUKfvA9Px7QKL7OOr7xm3" />
           <Link Id="OdD2NeJ3nJpQPzPICVOQvv" Ids="BpHl5RusEAWO7UNspufZQO,STlB6meynM6P3DtY4C1a04" />
           <Link Id="F94fu6HwzHbNOTej2ehL4j" Ids="CsiwU9Sk310LvZxOR2AojH,LlN01IOGRxxNR1tHgkKzxu" />
