@@ -182,15 +182,20 @@ shader RCUnity_TextureFX : TextureFX
             {
                 if (!DisableMerge && CascadeLevel < NumCascades - 1)
                 {
+                    // Parent cascade has blockSqrt*2 blocks per side
+                    int parentBlockSqrt = blockSqrt * 2;
+                    float2 parentBlockDim = floor(R / float(parentBlockSqrt));
+
+                    // Map current spatial position into parent's half-res grid
                     float2 position = coordsInBlock * 0.5 + 0.25;
                     float2 positionOffset = float2(
-                        fmod(angleIndex, float(blockSqrt * 2)),
-                        floor(angleIndex / float(blockSqrt * 2))
+                        fmod(angleIndex, float(parentBlockSqrt)),
+                        floor(angleIndex / float(parentBlockSqrt))
                     );
 
-                    position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
+                    position = clamp(position, 0.5, parentBlockDim - 0.5);
 
-                    float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
+                    float2 mergeUV = (position + positionOffset * parentBlockDim) / R;
 
                     if (DebugMergeUV)
                     {
