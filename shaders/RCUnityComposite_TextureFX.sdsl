@@ -13,10 +13,14 @@ shader RCUnityComposite_TextureFX : TextureFX
     {
         float2 uv = streams.TexCoord;
 
-        float3 gi = Texture1.SampleLevel(Sampler1, uv, 0).rgb;
-        float3 scene = Texture0.SampleLevel(Sampler0, uv, 0).rgb;
-        float3 color = scene + gi * Exposure;
-        color = color / (1.0 + color);
+        float3 gi = Texture1.SampleLevel(Sampler1, uv, 0).rgb * Exposure;
+        float4 scene = Texture0.SampleLevel(Sampler0, uv, 0);
+
+        // Tonemap GI only
+        gi = gi / (1.0 + gi);
+
+        // Overlay: scene on top of GI, using scene alpha
+        float3 color = lerp(gi, scene.rgb, scene.a);
 
         return float4(color, 1.0);
     }
