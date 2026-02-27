@@ -68,7 +68,7 @@ shader RCGMShaders_TextureFX : TextureFX
             rd += df * sdfScale;
             ray += delta * df * sdfScale * texel;
 
-            if (rd >= rangePx || floor(ray) != float2(0.0, 0.0))
+            if (rd >= rangePx || any(floor(ray) != float2(0.0, 0.0)))
                 break;
 
             // Light volume fix: skip rays starting inside emitters for higher cascades
