@@ -34,9 +34,13 @@ shader RCGMShaders_TextureFX : TextureFX
     int NumCascades = 6;
     float RayInterval = 2.0;
     int MarchSteps = 64;
+    bool LinearAccumulation = true;
 
     #define TAU 6.28318530718
     #define EPS 0.001
+
+    float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
+    float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
 
     float4 Raymarch(float2 originUV, float theta, float offsetUV, float rangeUV)
     {
@@ -60,7 +64,12 @@ shader RCGMShaders_TextureFX : TextureFX
                 return float4(0, 0, 0, 0);
 
             if (df <= EPS)
-                return float4(Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb, 0.0);
+            {
+                float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
+                if (LinearAccumulation)
+                    col = SRGBToLinear(col);
+                return float4(col, 0.0);
+            }
 
             rd += df;
             ray += delta * df;
@@ -133,6 +142,10 @@ shader RCGMShaders_TextureFX : TextureFX
             float4 radiance = Raymarch(originUV, theta, offsetUV, rangeUV);
             result += Merge(radiance, idx, probe, dirBlockSize) * 0.25;
         }
+
+        // At cascade 0, convert back from linear to sRGB for display
+        if (CascadeLevel == 0 && LinearAccumulation)
+            result.rgb = LinearToSRGB(result.rgb);
 
         return result;
     }
