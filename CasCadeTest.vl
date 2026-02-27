@@ -1565,7 +1565,6 @@
                 <Choice Kind="TypeFlag" Name="Float32" />
               </p:TypeAnnotation>
             </Pad>
-            <Pad Id="RZJvubRpvAnNHFdYqjVafe" Comment="" Bounds="514,1510,190,132" ShowValueBox="true" isIOBox="true" />
             <Pad Id="EL3A0GhZvAJMsOriOKoYZy" Comment="Use Normal Map" Bounds="911,951,35,35" ShowValueBox="true" isIOBox="true" Value="True">
               <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
@@ -1580,6 +1579,11 @@
               </p:TypeAnnotation>
             </Pad>
             <ControlPoint Id="JXAelOWNO4IP7V8A8GgAHL" Bounds="731,1040" />
+            <Pad Id="JIXKq0ezfKRM9lM9z7zFyE" Comment="Light Height" Bounds="951,1050,35,15" ShowValueBox="true" isIOBox="true" Value="0.5">
+              <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
+                <Choice Kind="TypeFlag" Name="Float32" />
+              </p:TypeAnnotation>
+            </Pad>
           </Canvas>
           <Link Id="If77tLi1YtsPPY8BSUBGVH" Ids="JmpN3tv3o9ROpqJBFoWYrb,JSqZHb0aS8uP4qmBwGkMhY" />
           <Link Id="LwqGOot8Ln8LzGxiDXfJ07" Ids="ENcsoIXPZpAM7gaJJUr7hJ,LLcJHzdFwIIN1BadLSiOCt" IsFeedback="true" />
@@ -1650,12 +1654,12 @@
           <Link Id="IVjmFLBq0w3MNgH5w1Vnni" Ids="TXR7F35yMNMLqo4B04Saat,GVYgmYEfgY0OEK2unhkSFh" />
           <Link Id="MOeGhY0S7ixQI5vPCPTNkQ" Ids="Qraj8Y2ds4INEBbeXapwcN,KkqGzBbGascQdpzsaJlSws" />
           <Link Id="Thsy0QZQGEhMcQYjkecvp4" Ids="UdIvzGjVdTsM8OnvM15slN,RgoSt7TUdilPI91g6QHGNf" />
-          <Link Id="C6ImlIYGc7DQImn2dU8lpm" Ids="V3Nmow1KFZtNH0SrlClhgO,RZJvubRpvAnNHFdYqjVafe" />
           <Link Id="DdyMb9RtpcbOXwpWrDutZR" Ids="TSSgG1YPINVNaCShPAScxh,AlBJE0DdyA4Luw6ocBhP3n" />
           <Link Id="GbeJuX0cZivPg5C0AS9W1q" Ids="EL3A0GhZvAJMsOriOKoYZy,V0sjSfrfg1aMonRuu7xTYC" />
           <Link Id="VHAgiBu60xpQEvJqXjUOkL" Ids="NvJOefcgzM0LNGJ9cc9eNX,Ld8umO7Mk4QMd67jLvnJLG" />
           <Link Id="UXEz680bQpzNnwjbzwnCDO" Ids="JXAelOWNO4IP7V8A8GgAHL,JxYjf9Ft4L2LjFI3oa96bP" />
           <Link Id="OCxnOqzXeO6PfXsVVLpJmX" Ids="S5ySBUg1YwuNZk8hmqMRJ6,JXAelOWNO4IP7V8A8GgAHL" IsHidden="true" />
+          <Link Id="IIXLYULessoLKZEQYUCvMf" Ids="JIXKq0ezfKRM9lM9z7zFyE,OsCb1kx3dh7NgrhM55f5RI" />
         </Patch>
       </Node>
       <!--
@@ -2496,7 +2500,7 @@
             <ControlPoint Id="HwmyCQ550htMcRc6NQpvdh" Bounds="599,1181" Alignment="Bottom" />
             <ControlPoint Id="GwC2Oc0OxwULuIYtRNdIoW" Bounds="753,1110" Alignment="Top" />
           </Node>
-          <Pad Id="RBGcY0sEEZPLCYkmVYtkFf" Comment="compare" Bounds="587,860,35,35" ShowValueBox="true" isIOBox="true" Value="False">
+          <Pad Id="RBGcY0sEEZPLCYkmVYtkFf" Comment="compare" Bounds="587,860,35,35" ShowValueBox="true" isIOBox="true" Value="True">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
             </p:TypeAnnotation>
