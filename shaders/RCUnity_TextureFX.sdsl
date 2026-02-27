@@ -31,6 +31,8 @@ shader RCUnity_TextureFX : TextureFX
     bool DebugMergeUV = false;
     bool DebugMergeSample = false;
     bool UsePointMerge = false;
+    // Debug: 0=off, 1=show Texture2 at own UV, 2=show rayOrigin as color, 3=show range
+    int DebugMode = 0;
 
     #define TAU 6.28318530718
 
@@ -85,6 +87,25 @@ shader RCUnity_TextureFX : TextureFX
         float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
 
         float2 coordsInBlock = fmod(pixelIndex, blockDim);
+
+        // Early-out debug modes
+        if (DebugMode == 1)
+        {
+            // Show raw Texture2 at this pixel's own UV — does the parent already have bleeding?
+            return Texture2.SampleLevel(ClampPointSampler, streams.TexCoord, 0);
+        }
+        if (DebugMode == 2)
+        {
+            // Show rayOrigin — should be smooth gradient from 0 to 1 within each block
+            float2 rayOrig = (coordsInBlock + 0.5) * float(blockSqrt) / R;
+            return float4(rayOrig, 0, 1);
+        }
+        if (DebugMode == 3)
+        {
+            // Show ray range for this cascade level
+            float2 range = CalculateRayRange(CascadeLevel, NumCascades);
+            return float4(range.x, range.y, 0, 1);
+        }
 
         float4 finalResult = float4(0, 0, 0, 0);
 
