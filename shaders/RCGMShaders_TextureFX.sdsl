@@ -43,7 +43,7 @@ shader RCGMShaders_TextureFX : TextureFX
 
     // Raymarch in pixel space. origin/delta in pixel coords; converts to UV for lookups.
     // Matches GMShaders structure: sample SDF, advance, then check hit/bounds.
-    float4 Raymarch(float2 origin, float2 delta, float rangeLimit)
+    float4 Raymarch(float2 origin, float2 delta, float rangeLimit, float totalOffset)
     {
         // Our SDF stores UV-space distance; multiply by R.x to get pixel distance.
         // (Assumes square texture — for non-square, UV distance is anisotropic.)
@@ -72,9 +72,9 @@ shader RCGMShaders_TextureFX : TextureFX
             if (df < EPS)
             {
                 float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
-                float normalizedDist = rd / R.x;
+                float totalDist = (totalOffset + rd) / R.x;
                 float falloffStrength = max(LightFalloff, 0.001);
-                float attenuation = exp(-normalizedDist * 5.0 / falloffStrength);
+                float attenuation = exp(-totalDist * 5.0 / falloffStrength);
                 return float4(col * attenuation, 0.0);
             }
         }
@@ -200,7 +200,7 @@ shader RCGMShaders_TextureFX : TextureFX
                     float2 rayDir = normalize(rayEnd - rayStart);
                     float rayLen = length(rayEnd - rayStart);
 
-                    samples[j] = Raymarch(rayStart, rayDir, rayLen);
+                    samples[j] = Raymarch(rayStart, rayDir, rayLen, intervalOffset);
                     samples[j] = MergeNearest(samples[j], preavg, bilinearProbes[j]);
                 }
 
@@ -216,14 +216,14 @@ shader RCGMShaders_TextureFX : TextureFX
                 float2 rayDir = normalize(rayEnd - rayStart);
                 float rayLen = length(rayEnd - rayStart);
 
-                float4 radiance = Raymarch(rayStart, rayDir, rayLen);
+                float4 radiance = Raymarch(rayStart, rayDir, rayLen, intervalOffset);
                 radiance = MergeNearest(radiance, preavg, interlacedProbe);
                 result += radiance * 0.25;
             }
             else
             {
                 // Standard: hardware bilinear merge
-                float4 radiance = Raymarch(rayStart, delta, intervalLimit);
+                float4 radiance = Raymarch(rayStart, delta, intervalLimit, intervalOffset);
                 result += Merge(radiance, preavg, extent, probePos) * 0.25;
             }
         }
