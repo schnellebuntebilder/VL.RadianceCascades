@@ -26,7 +26,7 @@ shader RCUnity_TextureFX : TextureFX
     float2 R = ViewSize;
 
     int CascadeLevel = 0;
-    int NumCascades = 4;
+    int NumCascades = 6;
     float RayRange = 1.0;
     int MarchSteps = 32;
 
@@ -34,10 +34,16 @@ shader RCUnity_TextureFX : TextureFX
 
     float2 CalculateRayRange(uint idx, uint count)
     {
+        // Compute effective ray range matching Unity:
+        // _RayRange = magnitude(screen / min(screen.x, screen.y)) * userRayRange
+        float minR = min(R.x, R.y);
+        float2 normalizedScreen = R / minR;
+        float effectiveRayRange = length(normalizedScreen) * RayRange;
+
         float maxValue = float((1 << (count * 2)) - 1);
         float rangeStart = float((1 << (idx * 2)) - 1);
         float rangeEnd = float((1 << (idx * 2 + 2)) - 1);
-        return float2(rangeStart, rangeEnd) / maxValue * RayRange;
+        return float2(rangeStart, rangeEnd) / maxValue * effectiveRayRange;
     }
 
     float4 SampleRadianceSDF(float2 rayOrigin, float2 rayDirection, float2 rayRange)
