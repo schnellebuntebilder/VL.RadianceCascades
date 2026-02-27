@@ -28,7 +28,7 @@ shader RCGMShaders_TextureFX : TextureFX
     float RayInterval = 2.0;
     int MarchSteps = 64;
     float AngleJitter = 0.0;
-    bool UseBilinearFix = false;
+    int MergeMode = 0; // 0=standard, 1=interlaced (fast, dithered), 2=bilinear (best quality, 4x cost)
 
     #define TAU 6.28318530718
     #define EPS 0.0001
@@ -132,17 +132,33 @@ shader RCGMShaders_TextureFX : TextureFX
         float angular = sqrAngular * sqrAngular * 4.0;
         float rayIndex = (probeDir.x + probeDir.y * sqrAngular) * 4.0;
 
-        // BilinearFix: get 4 surrounding N+1 probes and bilinear weights
+        // Interlaced/Bilinear: compute N+1 probe positions
+        float2 probeN1Base = floor((probePos - 1.0) / 2.0);
         float2 bilinearProbes[4];
-        float2 bilinearWeight = float2(0, 0);
-        if (UseBilinearFix)
+        bilinearProbes[0] = probeN1Base + float2(0, 0);
+        bilinearProbes[1] = probeN1Base + float2(1, 0);
+        bilinearProbes[2] = probeN1Base + float2(0, 1);
+        bilinearProbes[3] = probeN1Base + float2(1, 1);
+
+        // Interlaced: pick one of the 4 probes based on pixel position (no 2x2 group shares same N+1 probe)
+        float2 interlacedProbe = float2(0, 0);
+        if (MergeMode == 1)
         {
-            float2 probeN1 = floor((probePos - 1.0) / 2.0);
-            bilinearProbes[0] = probeN1 + float2(0, 0);
-            bilinearProbes[1] = probeN1 + float2(1, 0);
-            bilinearProbes[2] = probeN1 + float2(0, 1);
-            bilinearProbes[3] = probeN1 + float2(1, 1);
-            float2 texelN1_N = floor(probeN1 * 2.0 + 1.0);
+            // Blurrier interlaced pattern: [2,1,0,3] mapping
+            float2 interlacedProbes[4];
+            interlacedProbes[0] = bilinearProbes[2];
+            interlacedProbes[1] = bilinearProbes[1];
+            interlacedProbes[2] = bilinearProbes[0];
+            interlacedProbes[3] = bilinearProbes[3];
+            float offset = fmod(probePos.x * 2.0 + probePos.y, 4.0);
+            interlacedProbe = interlacedProbes[int(offset)];
+        }
+
+        // Bilinear: compute interpolation weights
+        float2 bilinearWeight = float2(0, 0);
+        if (MergeMode == 2)
+        {
+            float2 texelN1_N = floor(probeN1Base * 2.0 + 1.0);
             bilinearWeight = 0.25 + (probePos - texelN1_N) * 0.5;
         }
 
@@ -168,9 +184,9 @@ shader RCGMShaders_TextureFX : TextureFX
             float2 deltaNm1 = float2(cos(thetaNm1), sin(thetaNm1));
             float2 rayStart = origin + deltaNm1 * intervalOffset;
 
-            if (UseBilinearFix)
+            if (MergeMode == 2)
             {
-                // Cast 4 rays, one reprojected to each bilinear N+1 probe
+                // Bilinear: cast 4 rays, one reprojected to each bilinear N+1 probe
                 float4 samples[4];
                 [unroll]
                 for (int j = 0; j < 4; j++)
@@ -184,13 +200,25 @@ shader RCGMShaders_TextureFX : TextureFX
                     samples[j] = MergeNearest(samples[j], preavg, bilinearProbes[j]);
                 }
 
-                // Manual bilinear interpolation
                 float4 top = lerp(samples[0], samples[1], bilinearWeight.x);
                 float4 bot = lerp(samples[2], samples[3], bilinearWeight.x);
                 result += lerp(top, bot, bilinearWeight.y) * 0.25;
             }
+            else if (MergeMode == 1)
+            {
+                // Interlaced: reproject ray to single nearest-interlaced N+1 probe
+                float2 originN1 = (interlacedProbe + 0.5) * probeSpacingN1;
+                float2 rayEnd = originN1 + delta * (intervalOffset + intervalLimit);
+                float2 rayDir = normalize(rayEnd - rayStart);
+                float rayLen = length(rayEnd - rayStart);
+
+                float4 radiance = Raymarch(rayStart, rayDir, rayLen);
+                radiance = MergeNearest(radiance, preavg, interlacedProbe);
+                result += radiance * 0.25;
+            }
             else
             {
+                // Standard: hardware bilinear merge
                 float4 radiance = Raymarch(rayStart, delta, intervalLimit);
                 result += Merge(radiance, preavg, extent, probePos) * 0.25;
             }
