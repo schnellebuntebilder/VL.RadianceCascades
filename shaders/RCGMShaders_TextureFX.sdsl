@@ -74,7 +74,7 @@ shader RCGMShaders_TextureFX : TextureFX
                 float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
                 float normalizedDist = rd / R.x;
                 float falloffStrength = max(LightFalloff, 0.001);
-                float attenuation = saturate(1.0 - normalizedDist / falloffStrength);
+                float attenuation = exp(-normalizedDist * 5.0 / falloffStrength);
                 return float4(col * attenuation, 0.0);
             }
         }
