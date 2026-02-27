@@ -2,23 +2,15 @@
 
 shader RCGMShaders_TextureFX : TextureFX
 {
-    // Radiance Cascades — based on GMShaders/Yaazarai optimized implementation.
-    // Uses direction-first probe layout with pre-averaging for efficient merging.
+    // Radiance Cascades — based on GMShaders/Yaazarai "Final" implementation.
+    // Direction-first probe layout with pre-averaging.
     //
-    // Key improvements over position-first (Unity) approach:
-    //   - Direction-first layout: bilinear merge correctly interpolates between probes
-    //   - Pre-averaging: 4 rays averaged per pixel (75% less memory)
-    //   - Light leak fix: interval overlap prevents gaps between cascades
-    //   - Light volume fix: higher cascades skip rays starting inside emitters
-    //   - sRGB linear accumulation for correct color blending
-    //
-    // Texture0: Scene RGBA (RGB = emissive color)
+    // Texture0: Scene RGBA (RGB = emissive color, at full render resolution)
     // Texture1: Distance field (from JFA pipeline, UV-space distances)
     // Texture2: Previous cascade output (N+1, or black for top cascade)
     //
     // Process cascades from highest (NumCascades-1) down to 0.
-    // Cascade 0 output is the final per-pixel GI radiance.
-    // Use RCUnityComposite to add GI to the scene.
+    // Cascade 0 output is the final GI radiance.
     //
     // NOTE: Resolution must be power-of-2 (e.g., 512, 1024)
 
@@ -33,114 +25,104 @@ shader RCGMShaders_TextureFX : TextureFX
 
     int CascadeLevel = 0;
     int NumCascades = 6;
-    float RayRange = 1.0;
+    float RayInterval = 2.0;
     int MarchSteps = 64;
     bool LinearAccumulation = true;
 
     #define TAU 6.28318530718
-    #define EPS 0.001
+    #define EPS 0.0001
 
     float3 SRGBToLinear(float3 c) { return pow(max(c, 0.0), 2.2); }
     float3 LinearToSRGB(float3 c) { return pow(max(c, 0.0), 1.0 / 2.2); }
 
-    float2 CalculateRayRange(uint idx, uint count)
+    // Raymarch in pixel space, matching GMShaders Final exactly.
+    // origin/delta are in pixel coords; converts to UV for texture lookups.
+    float4 Raymarch(float2 origin, float2 delta, float interval)
     {
-        float minR = min(R.x, R.y);
-        float2 normalizedScreen = R / minR;
-        float effectiveRayRange = length(normalizedScreen) * RayRange;
+        float scale = length(R);
+        float2 texel = 1.0 / R;
 
-        float maxValue = float((1 << (count * 2)) - 1);
-        float rangeStart = float((1 << (idx * 2)) - 1);
-        float rangeEnd = float((1 << (idx * 2 + 2)) - 1);
-        return float2(rangeStart, rangeEnd) / maxValue * effectiveRayRange;
-    }
-
-    float4 Raymarch(float2 rayOrigin, float2 rayDirection, float2 rayRange)
-    {
-        float mxR = max(R.x, R.y);
-        float2 aspectYX = float2(R.y, R.x) / mxR;
-        float t = rayRange.x;
-
+        float rd = 0.0;
+        [loop]
         for (int i = 0; i < MarchSteps; i++)
         {
-            float2 pos = rayOrigin + t * rayDirection * aspectYX;
+            float2 ray = (origin + delta * rd) * texel;
 
-            if (t > rayRange.y
-                || pos.x < 0 || pos.y < 0
-                || pos.x > 1 || pos.y > 1)
+            if (rd >= interval || any(floor(ray) != float2(0.0, 0.0)))
                 break;
 
-            float dist = Texture1.SampleLevel(ClampLinearSampler, pos, 0).r;
+            if (ray.x < 0.0 || ray.x > 1.0 || ray.y < 0.0 || ray.y > 1.0)
+                break;
 
-            // Light volume fix: skip rays starting inside emitters for higher cascades
-            if (dist < EPS && t <= rayRange.x + EPS && CascadeLevel > 0)
-                return float4(0, 0, 0, 0);
+            float df = Texture1.SampleLevel(ClampLinearSampler, ray, 0).r;
+            // Our SDF is UV-space distance; scale to pixel distance
+            float dfPx = df * scale;
 
-            if (dist < EPS)
+            rd += dfPx;
+
+            if (dfPx <= EPS * scale)
             {
-                float3 col = Texture0.SampleLevel(ClampLinearSampler, pos, 0).rgb;
+                float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
                 if (LinearAccumulation)
                     col = SRGBToLinear(col);
                 return float4(col, 0.0);
             }
-
-            t += dist;
         }
 
         return float4(0, 0, 0, 1);
     }
 
-    // Merge with cascade N+1 using direction-first hardware interpolation (single tap)
-    float4 Merge(float4 radiance, float rayIndex, float2 probe, float2 dirBlockSize)
+    // Merge with cascade N+1 using direction-first layout
+    float4 Merge(float4 radiance, float rayIndex, float2 extent, float2 probe)
     {
         if (radiance.a == 0.0 || CascadeLevel >= NumCascades - 1)
             return float4(radiance.rgb, 1.0 - radiance.a);
 
         float angularN1 = pow(2.0, float(CascadeLevel) + 1.0);
-        float2 sizeN1 = dirBlockSize * 0.5;
-        float2 probeN1 = float2(fmod(rayIndex, angularN1), floor(rayIndex / angularN1)) * sizeN1;
-        float2 interpUV = probe * 0.5 + 0.25;
-        float2 clampedUV = max(float2(1.0, 1.0), min(interpUV, sizeN1 - 1.0));
-        float2 lookupUV = (probeN1 + clampedUV) / R;
+        float2 extentN1 = floor(R / angularN1);
+        float2 interpN1 = float2(fmod(rayIndex, angularN1), floor(rayIndex / angularN1)) * extentN1;
+        interpN1 += clamp(probe * 0.5 + 0.25, float2(0.5, 0.5), extentN1 - 0.5);
 
-        float4 merged = Texture2.SampleLevel(ClampLinearSampler, lookupUV, 0);
+        float4 merged = Texture2.SampleLevel(ClampLinearSampler, interpN1 / R, 0);
         return radiance + merged;
     }
 
     stage override float4 Shading()
     {
         float2 coord = floor(streams.TexCoord * R);
+        float sqrAngular = pow(2.0, float(CascadeLevel));
+        float2 extent = floor(R / sqrAngular);
 
-        // Direction-first layout
-        float angular = pow(2.0, float(CascadeLevel));
-        float2 dirBlockSize = R / angular;
-        float2 probe = fmod(coord, dirBlockSize);
-        float2 raypos = floor(streams.TexCoord * angular);
-        float preAvgIndex = raypos.x + angular * raypos.y;
+        // probe.xy = position within direction block, probe.zw = direction block index
+        float2 probePos = fmod(coord, extent);
+        float2 probeDir = floor(coord / extent);
 
-        // Probe origin in UV space (same as Unity approach)
+        // Interval: geometric sequence
+        float interval = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
+        float limit = RayInterval * pow(4.0, float(CascadeLevel));
+
+        // Probe spacing in pixel coords
         float probeSpacingPx = pow(2.0, float(CascadeLevel));
-        float2 rayOrigin = (probe + 0.5) * probeSpacingPx / R;
+        float2 origin = (probePos + 0.5) * probeSpacingPx;
 
-        // Ray range (same as Unity approach)
-        float2 range = CalculateRayRange(CascadeLevel, NumCascades);
-
-        // Angular parameters (pre-averaged: index * 4)
-        float totalAngular = angular * angular;
-        float actualIndex = preAvgIndex * 4.0;
-        float thetaScalar = TAU / (totalAngular * 4.0);
+        // Angular: total actual rays = sqrAngular^2 * 4
+        float angular = sqrAngular * sqrAngular * 4.0;
+        float rayIndex = (probeDir.x + probeDir.y * sqrAngular) * 4.0;
 
         float4 result = float4(0, 0, 0, 0);
 
         [unroll]
         for (int i = 0; i < 4; i++)
         {
-            float idx = actualIndex + float(i);
-            float theta = (idx + 0.5) * thetaScalar;
-            float2 rayDirection = float2(cos(theta), sin(theta));
+            float preavg = rayIndex + float(i);
+            float theta = (preavg + 0.5) * (TAU / angular);
+            float2 delta = float2(cos(theta), sin(theta));
 
-            float4 radiance = Raymarch(rayOrigin, rayDirection, range);
-            result += Merge(radiance, idx, probe, dirBlockSize) * 0.25;
+            // Raymarch starting from interval offset
+            float2 rayStart = origin + delta * interval;
+            float4 radiance = Raymarch(rayStart, delta, limit);
+
+            result += Merge(radiance, preavg, extent, probePos) * 0.25;
         }
 
         if (CascadeLevel == 0 && LinearAccumulation)

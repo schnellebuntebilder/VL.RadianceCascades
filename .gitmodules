@@ -6,3 +6,6 @@
 	path = radiance cascades/RadianceCascadesPaper
 	url = git@github.com:Raikiri/RadianceCascadesPaper.git
 	branch = main
+[submodule "radiance cascades/GMShaders-Radiance-Cascades"]
+	path = radiance cascades/GMShaders-Radiance-Cascades
+	url = git@github.com:Yaazarai/GMShaders-Radiance-Cascades.git
