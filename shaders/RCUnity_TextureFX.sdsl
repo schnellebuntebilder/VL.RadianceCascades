@@ -29,6 +29,8 @@ shader RCUnity_TextureFX : TextureFX
     int MarchSteps = 32;
     bool DisableMerge = false;
     bool DebugMergeUV = false;
+    bool DebugMergeSample = false;
+    bool UsePointMerge = false;
 
     #define TAU 6.28318530718
 
@@ -115,12 +117,22 @@ shader RCUnity_TextureFX : TextureFX
 
                     if (DebugMergeUV)
                     {
-                        // Visualize mergeUV: red=u, green=v
                         finalResult += float4(mergeUV, 0, 1) * 0.25;
                         continue;
                     }
 
-                    float4 rad = Texture2.SampleLevel(ClampLinearSampler, mergeUV, 0);
+                    float4 rad;
+                    if (UsePointMerge)
+                        rad = Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
+                    else
+                        rad = Texture2.SampleLevel(ClampLinearSampler, mergeUV, 0);
+
+                    if (DebugMergeSample)
+                    {
+                        // Show what we actually read from the parent
+                        finalResult += rad * 0.25;
+                        continue;
+                    }
 
                     radiance.rgb += rad.rgb * radiance.a;
                     radiance.a *= rad.a;
