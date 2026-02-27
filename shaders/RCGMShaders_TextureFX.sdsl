@@ -118,7 +118,7 @@ shader RCGMShaders_TextureFX : TextureFX
         // Direction-first layout matching GMShaders exactly
         float angular = pow(2.0, float(CascadeLevel));
         // Probe spacing in pixels of the render scene
-        float2 linear = float2(CascadeLinear * pow(2.0, float(CascadeLevel)),
+        float2 probeSpacing = float2(CascadeLinear * pow(2.0, float(CascadeLevel)),
                                CascadeLinear * pow(2.0, float(CascadeLevel)));
         // Direction block size within cascade texture
         float2 dirBlockSize = R / angular;
@@ -129,7 +129,7 @@ shader RCGMShaders_TextureFX : TextureFX
         float preAvgIndex = raypos.x + angular * raypos.y;
 
         // Probe origin in render pixel space
-        float2 originPx = (probe + 0.5) * linear;
+        float2 originPx = (probe + 0.5) * probeSpacing;
 
         // Angular parameters (pre-averaged: index * 4 to get actual ray index)
         float totalAngular = angular * angular;
@@ -141,7 +141,7 @@ shader RCGMShaders_TextureFX : TextureFX
         float offsetPx = (RayInterval * (1.0 - pow(4.0, float(CascadeLevel)))) / (1.0 - 4.0);
         float rangePx = RayInterval * pow(4.0, float(CascadeLevel));
         // Light leak fix: overlap by N+1 probe spacing diagonal
-        rangePx += length(linear * 2.0);
+        rangePx += length(probeSpacing * 2.0);
 
         // Cast 4 rays and pre-average
         float4 result = float4(0, 0, 0, 0);
