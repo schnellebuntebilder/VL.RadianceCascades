@@ -33,6 +33,7 @@ shader RCGMShaders_TextureFX : TextureFX
     float LightFalloff = 1.0; // 1 = no falloff, 0 = maximum falloff (light disappears)
     bool UseNormalMap = false;
     float NormalStrength = 1.0;
+    float LightHeight = 0.5; // Height of lights above surface (0-1), affects normal map shading angle
 
     #define TAU 6.28318530718
     #define EPS 0.0001
@@ -223,7 +224,10 @@ shader RCGMShaders_TextureFX : TextureFX
                 float4 bot = lerp(samples[2], samples[3], bilinearWeight.x);
                 float4 rad = lerp(top, bot, bilinearWeight.y);
                 if (UseNormalMap && CascadeLevel == 0)
-                    rad.rgb *= saturate(dot(surfaceNormal, float3(-delta, 0)));
+                {
+                    float3 lightDir = normalize(float3(-delta, LightHeight));
+                    rad.rgb *= saturate(dot(surfaceNormal, lightDir));
+                }
                 result += rad * 0.25;
             }
             else if (MergeMode == 1)
@@ -237,7 +241,10 @@ shader RCGMShaders_TextureFX : TextureFX
                 float4 radiance = Raymarch(rayStart, rayDir, rayLen, intervalOffset);
                 radiance = MergeNearest(radiance, preavg, interlacedProbe);
                 if (UseNormalMap && CascadeLevel == 0)
-                    radiance.rgb *= saturate(dot(surfaceNormal, float3(-delta, 0)));
+                {
+                    float3 lightDir = normalize(float3(-delta, LightHeight));
+                    radiance.rgb *= saturate(dot(surfaceNormal, lightDir));
+                }
                 result += radiance * 0.25;
             }
             else
@@ -246,7 +253,10 @@ shader RCGMShaders_TextureFX : TextureFX
                 float4 radiance = Raymarch(rayStart, delta, intervalLimit, intervalOffset);
                 radiance = Merge(radiance, preavg, extent, probePos);
                 if (UseNormalMap && CascadeLevel == 0)
-                    radiance.rgb *= saturate(dot(surfaceNormal, float3(-delta, 0)));
+                {
+                    float3 lightDir = normalize(float3(-delta, LightHeight));
+                    radiance.rgb *= saturate(dot(surfaceNormal, lightDir));
+                }
                 result += radiance * 0.25;
             }
         }
