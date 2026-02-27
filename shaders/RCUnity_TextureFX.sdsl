@@ -124,7 +124,6 @@ shader RCUnity_TextureFX : TextureFX
         }
         if (DebugMode == 6)
         {
-            // Show Texture2 at the MERGE UV for first direction only
             float2 position = coordsInBlock * 0.5 + 0.25;
             float firstAngleIndex = blockIndex * 4.0;
             float2 positionOffset = float2(
@@ -132,12 +131,11 @@ shader RCUnity_TextureFX : TextureFX
                 floor(firstAngleIndex / float(blockSqrt * 2))
             );
             position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
-            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
+            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / effectiveR;
             return Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
         }
         if (DebugMode == 7)
         {
-            // Show mergeUV raw values for first direction
             float2 position = coordsInBlock * 0.5 + 0.25;
             float firstAngleIndex = blockIndex * 4.0;
             float2 positionOffset = float2(
@@ -145,8 +143,7 @@ shader RCUnity_TextureFX : TextureFX
                 floor(firstAngleIndex / float(blockSqrt * 2))
             );
             position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
-            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
-            // R=mergeUV.x, G=mergeUV.y, B=1 if mergeUV is out of [0,1]
+            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / effectiveR;
             float oob = (mergeUV.x < 0 || mergeUV.x > 1 || mergeUV.y < 0 || mergeUV.y > 1) ? 1.0 : 0.0;
             return float4(mergeUV, oob, 1);
         }
@@ -154,7 +151,7 @@ shader RCUnity_TextureFX : TextureFX
         {
             // Show just raymarched radiance for all 4 dirs, NO merge
             float4 res = float4(0,0,0,0);
-            float2 ro = (coordsInBlock + 0.5) * float(blockSqrt) / effectiveR;
+            float2 ro = (coordsInBlock + 0.5) * float(blockSqrt) / R;
             float2 rng = CalculateRayRange(CascadeLevel, NumCascades);
             for (int d = 0; d < 4; d++)
             {
@@ -170,7 +167,7 @@ shader RCUnity_TextureFX : TextureFX
 
         float4 finalResult = float4(0, 0, 0, 0);
 
-        float2 rayOrigin = (coordsInBlock + 0.5) * float(blockSqrt) / effectiveR;
+        float2 rayOrigin = (coordsInBlock + 0.5) * float(blockSqrt) / R;
         float2 range = CalculateRayRange(CascadeLevel, NumCascades);
 
         for (int i = 0; i < 4; i++)
