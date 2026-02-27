@@ -129,6 +129,38 @@ shader RCUnity_TextureFX : TextureFX
             float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
             return Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
         }
+        if (DebugMode == 7)
+        {
+            // Show mergeUV raw values for first direction
+            float2 position = coordsInBlock * 0.5 + 0.25;
+            float firstAngleIndex = blockIndex * 4.0;
+            float2 positionOffset = float2(
+                fmod(firstAngleIndex, float(blockSqrt * 2)),
+                floor(firstAngleIndex / float(blockSqrt * 2))
+            );
+            position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
+            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
+            // R=mergeUV.x, G=mergeUV.y, B=1 if mergeUV is out of [0,1]
+            float oob = (mergeUV.x < 0 || mergeUV.x > 1 || mergeUV.y < 0 || mergeUV.y > 1) ? 1.0 : 0.0;
+            return float4(mergeUV, oob, 1);
+        }
+        if (DebugMode == 8)
+        {
+            // Show just raymarched radiance for all 4 dirs, NO merge
+            float4 res = float4(0,0,0,0);
+            float2 ro = (coordsInBlock + 0.5) * float(blockSqrt) / R;
+            float2 rng = CalculateRayRange(CascadeLevel, NumCascades);
+            for (int d = 0; d < 4; d++)
+            {
+                float as2 = TAU / float(blockSqrt * blockSqrt * 4);
+                float ai = blockIndex * 4.0 + float(d);
+                float a = (ai + 0.5) * as2;
+                float2 rd = float2(cos(a), sin(a));
+                float4 rad = SampleRadianceSDF(ro, rd, rng);
+                res += rad * 0.25;
+            }
+            return res;
+        }
 
         float4 finalResult = float4(0, 0, 0, 0);
 
