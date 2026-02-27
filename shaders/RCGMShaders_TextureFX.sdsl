@@ -8,6 +8,7 @@ shader RCGMShaders_TextureFX : TextureFX
     // Texture0: Scene RGBA (RGB = emissive color, at full render resolution)
     // Texture1: Distance field (from JFA pipeline, UV-space distances)
     // Texture2: Previous cascade output (N+1, or black for top cascade)
+    // Texture3: Normal map (optional, RG = XY normal, enabled by UseNormalMap)
     //
     // Process cascades from highest (NumCascades-1) down to 0.
     // Cascade 0 output is the final GI radiance.
@@ -30,6 +31,8 @@ shader RCGMShaders_TextureFX : TextureFX
     float AngleJitter = 0.0;
     int MergeMode = 0; // 0=standard, 1=interlaced (fast, dithered), 2=bilinear (best quality, 4x cost)
     float LightFalloff = 1.0; // 1 = no falloff, 0 = maximum falloff (light disappears)
+    bool UseNormalMap = false;
+    float NormalStrength = 1.0;
 
     #define TAU 6.28318530718
     #define EPS 0.0001
@@ -166,6 +169,15 @@ shader RCGMShaders_TextureFX : TextureFX
             bilinearWeight = 0.25 + (probePos - texelN1_N) * 0.5;
         }
 
+        // Normal map: sample once per pixel at cascade 0
+        float2 surfaceNormal2D = float2(0, 0);
+        if (UseNormalMap && CascadeLevel == 0)
+        {
+            float2 probeUV = origin / R;
+            float2 nmap = Texture3.SampleLevel(ClampLinearSampler, probeUV, 0).rg;
+            surfaceNormal2D = normalize(lerp(float2(0, 0), nmap * 2.0 - 1.0, NormalStrength));
+        }
+
         float4 result = float4(0, 0, 0, 0);
 
         [unroll]
@@ -206,7 +218,10 @@ shader RCGMShaders_TextureFX : TextureFX
 
                 float4 top = lerp(samples[0], samples[1], bilinearWeight.x);
                 float4 bot = lerp(samples[2], samples[3], bilinearWeight.x);
-                result += lerp(top, bot, bilinearWeight.y) * 0.25;
+                float4 rad = lerp(top, bot, bilinearWeight.y);
+                if (UseNormalMap && CascadeLevel == 0)
+                    rad.rgb *= saturate(dot(surfaceNormal2D, -delta));
+                result += rad * 0.25;
             }
             else if (MergeMode == 1)
             {
@@ -218,13 +233,18 @@ shader RCGMShaders_TextureFX : TextureFX
 
                 float4 radiance = Raymarch(rayStart, rayDir, rayLen, intervalOffset);
                 radiance = MergeNearest(radiance, preavg, interlacedProbe);
+                if (UseNormalMap && CascadeLevel == 0)
+                    radiance.rgb *= saturate(dot(surfaceNormal2D, -delta));
                 result += radiance * 0.25;
             }
             else
             {
                 // Standard: hardware bilinear merge
                 float4 radiance = Raymarch(rayStart, delta, intervalLimit, intervalOffset);
-                result += Merge(radiance, preavg, extent, probePos) * 0.25;
+                radiance = Merge(radiance, preavg, extent, probePos);
+                if (UseNormalMap && CascadeLevel == 0)
+                    radiance.rgb *= saturate(dot(surfaceNormal2D, -delta));
+                result += radiance * 0.25;
             }
         }
 
