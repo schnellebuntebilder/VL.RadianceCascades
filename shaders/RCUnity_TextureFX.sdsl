@@ -88,6 +88,8 @@ shader RCUnity_TextureFX : TextureFX
         float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
 
         float2 coordsInBlock = pixelIndex - block2DIndex * blockDim;
+        // Clamp so remainder pixels in last block don't exceed block bounds
+        coordsInBlock = min(coordsInBlock, blockDim - 1);
 
         // Early-out debug modes
         if (DebugMode == 1)
