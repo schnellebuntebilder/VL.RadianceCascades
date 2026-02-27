@@ -78,19 +78,21 @@ shader RCUnity_TextureFX : TextureFX
 
     stage override float4 Shading()
     {
+        // Snap effective resolution to largest multiple of max blockSqrt
+        int maxBlockSqrt = 1 << (NumCascades - 1);
+        float2 effectiveR = floor(R / float(maxBlockSqrt)) * float(maxBlockSqrt);
+
         float2 pixelIndex = min(floor(streams.TexCoord * R), R - 1);
+        // Clamp pixels to effective area
+        pixelIndex = min(pixelIndex, effectiveR - 1);
 
         int blockSqrt = 1 << CascadeLevel;
 
-        float2 blockDim = R / float(blockSqrt);
-        // Use integer truncation for block index to avoid float rounding
-        float2 block2DIndex = min(floor(pixelIndex / blockDim), float(blockSqrt) - 1);
+        float2 blockDim = effectiveR / float(blockSqrt);
+        float2 block2DIndex = floor(pixelIndex / blockDim);
         float blockIndex = block2DIndex.x + block2DIndex.y * float(blockSqrt);
 
-        // Compute coords precisely via subtraction, not fmod
         float2 coordsInBlock = pixelIndex - block2DIndex * blockDim;
-        // Clamp to valid block range
-        coordsInBlock = clamp(coordsInBlock, 0, blockDim - 1);
 
         // Early-out debug modes
         if (DebugMode == 1)
@@ -152,7 +154,7 @@ shader RCUnity_TextureFX : TextureFX
         {
             // Show just raymarched radiance for all 4 dirs, NO merge
             float4 res = float4(0,0,0,0);
-            float2 ro = (coordsInBlock + 0.5) * float(blockSqrt) / R;
+            float2 ro = (coordsInBlock + 0.5) * float(blockSqrt) / effectiveR;
             float2 rng = CalculateRayRange(CascadeLevel, NumCascades);
             for (int d = 0; d < 4; d++)
             {
@@ -168,7 +170,7 @@ shader RCUnity_TextureFX : TextureFX
 
         float4 finalResult = float4(0, 0, 0, 0);
 
-        float2 rayOrigin = (coordsInBlock + 0.5) * float(blockSqrt) / R;
+        float2 rayOrigin = (coordsInBlock + 0.5) * float(blockSqrt) / effectiveR;
         float2 range = CalculateRayRange(CascadeLevel, NumCascades);
 
         for (int i = 0; i < 4; i++)
@@ -193,8 +195,7 @@ shader RCUnity_TextureFX : TextureFX
 
                     position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
 
-                    float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
-                    mergeUV = saturate(mergeUV);
+                    float2 mergeUV = (position + positionOffset * blockDim * 0.5) / effectiveR;
 
                     if (DebugMergeUV)
                     {
