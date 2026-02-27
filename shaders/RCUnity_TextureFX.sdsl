@@ -27,6 +27,8 @@ shader RCUnity_TextureFX : TextureFX
     int NumCascades = 4;
     float RayRange = 1.0;
     int MarchSteps = 32;
+    bool DisableMerge = false;
+    bool DebugMergeUV = false;
 
     #define TAU 6.28318530718
 
@@ -99,7 +101,7 @@ shader RCUnity_TextureFX : TextureFX
 
             if (radiance.a != 0.0)
             {
-                if (CascadeLevel < NumCascades - 1)
+                if (!DisableMerge && CascadeLevel < NumCascades - 1)
                 {
                     float2 position = coordsInBlock * 0.5 + 0.25;
                     float2 positionOffset = float2(
@@ -110,6 +112,14 @@ shader RCUnity_TextureFX : TextureFX
                     position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
 
                     float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
+
+                    if (DebugMergeUV)
+                    {
+                        // Visualize mergeUV: red=u, green=v
+                        finalResult += float4(mergeUV, 0, 1) * 0.25;
+                        continue;
+                    }
+
                     float4 rad = Texture2.SampleLevel(ClampLinearSampler, mergeUV, 0);
 
                     radiance.rgb += rad.rgb * radiance.a;
