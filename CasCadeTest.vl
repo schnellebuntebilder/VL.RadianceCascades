@@ -1982,7 +1982,7 @@
               <Pin Id="RrT55JARZX5NIjsBe13PJt" Name="On New Cycle" Kind="OutputPin" />
               <Pin Id="Adv9HcIe8Y0Mfv3DW2g5o6" Name="Cycles" Kind="OutputPin" />
             </Node>
-            <Pad Id="JZCbQS1iK0HMXV5nO3RJ02" Comment="Pause" Bounds="963,170,35,35" ShowValueBox="true" isIOBox="true" Value="False">
+            <Pad Id="JZCbQS1iK0HMXV5nO3RJ02" Comment="Pause" Bounds="963,170,35,35" ShowValueBox="true" isIOBox="true" Value="True">
               <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
               </p:TypeAnnotation>
@@ -2076,7 +2076,7 @@
             <Pin Id="VxGg1FUI09QO2xL4RMNGtK" Name="Scaling Mode" Kind="InputPin" />
             <Pin Id="LiWU3ffw4hWOF6X1A2OvGC" Name="Enable Keyboard Shortcuts" Kind="InputPin" />
             <Pin Id="N9hKzVKUvSQMsdqAJOSov8" Name="Enabled" Kind="InputPin" />
-            <Pin Id="DoK4z83hu1YMB4nGHNM73h" Name="Show Info String" Kind="InputPin" DefaultValue="True" />
+            <Pin Id="DoK4z83hu1YMB4nGHNM73h" Name="Show Info String" Kind="InputPin" DefaultValue="False" />
             <Pin Id="PIC1WXHIlOGNtSQPnZsmA6" Name="Present Interval" Kind="InputPin" />
             <Pin Id="CgTVcEd7q8fNdeRn53sTnv" Name="Output" Kind="OutputPin" />
             <Pin Id="OM1MXEtzsllLCbXRiodhHD" Name="Client Bounds" Kind="OutputPin" />
