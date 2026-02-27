@@ -2496,7 +2496,7 @@
             <ControlPoint Id="HwmyCQ550htMcRc6NQpvdh" Bounds="599,1181" Alignment="Bottom" />
             <ControlPoint Id="GwC2Oc0OxwULuIYtRNdIoW" Bounds="753,1110" Alignment="Top" />
           </Node>
-          <Pad Id="RBGcY0sEEZPLCYkmVYtkFf" Comment="compare" Bounds="587,860,35,35" ShowValueBox="true" isIOBox="true" Value="True">
+          <Pad Id="RBGcY0sEEZPLCYkmVYtkFf" Comment="compare" Bounds="587,860,35,35" ShowValueBox="true" isIOBox="true" Value="False">
             <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
               <Choice Kind="ImmutableTypeFlag" Name="Boolean" />
             </p:TypeAnnotation>

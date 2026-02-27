@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Document xmlns:p="property" xmlns:r="reflection" Id="K15iJfkRHIiNc46NMDnRPh" LanguageVersion="2024.6.0-0261-g38f7059b02" Version="0.128">
+<Document xmlns:p="property" xmlns:r="reflection" Id="K15iJfkRHIiNc46NMDnRPh" LanguageVersion="2025.7.1-0174-g187f627d60" Version="0.128">
   <Patch Id="Ve0aGIUidpxQTQiFuTrrtK">
     <Canvas Id="DcYg7AMaOFlNA2EQcjmy9l" DefaultCategory="Radiosity" CanvasType="FullCategory">
       <!--
@@ -67,7 +67,7 @@
               <Pin Id="SDrlVP1v1HCOg7cWTtTpi3" Name="Compare Function" Kind="InputPin" />
               <Pin Id="EwEFIAAPSQRNLbypybkYfa" Name="Output" Kind="OutputPin" />
             </Node>
-            <Pad Id="VFxiCGuNToXOSmc8feqkP5" Comment="Filter" Bounds="506,538,214,15" ShowValueBox="true" isIOBox="true" Value="Point">
+            <Pad Id="VFxiCGuNToXOSmc8feqkP5" Comment="Filter" Bounds="506,538,216,15" ShowValueBox="true" isIOBox="true" Value="Point">
               <p:TypeAnnotation LastCategoryFullName="Stride.Graphics" LastDependency="Stride.dll">
                 <Choice Kind="TypeFlag" Name="TextureFilter" />
               </p:TypeAnnotation>
@@ -296,6 +296,7 @@
               <Pin Id="Qnq9pTCudHRM4T8UPLIj2Y" Name="Size" Kind="InputPin" />
               <Pin Id="CtDMikoyU52QIW6GFyUjcf" Name="Render View" Kind="InputPin" />
               <Pin Id="MRCihPiEwyIQKnXR6D5MqG" Name="Format" Kind="InputPin" />
+              <Pin Id="MRQhAMqovZhLpXfxDgvAmi" Name="View Format" Kind="InputPin" />
               <Pin Id="S0a72oA8cwSOgKP76RNabP" Name="Color Shared" Kind="InputPin" IsHidden="true" />
               <Pin Id="Gff4fXYTax5LdEnAQyCcNG" Name="Depth Format" Kind="InputPin" DefaultValue="None" />
               <Pin Id="NYYBDIYuAc0MTQsKLyYATx" Name="Depth Shared" Kind="InputPin" IsHidden="true" />
@@ -325,6 +326,7 @@
               <Pin Id="NMEiwqTcLhMQAGqWoyXyyi" Name="Size" Kind="InputPin" />
               <Pin Id="R5qxcFimkYeQcUVcWjBlAz" Name="Render View" Kind="InputPin" />
               <Pin Id="AzpLv9CoMTCLn3lKtq9yBF" Name="Format" Kind="InputPin" />
+              <Pin Id="AHrUyM05ZSQPKJj31BKAUe" Name="View Format" Kind="InputPin" />
               <Pin Id="Lvjo3p2dNtTL33RZ2u3K7Z" Name="Color Shared" Kind="InputPin" IsHidden="true" />
               <Pin Id="CnTsemKjpmmOcKNhvUW6KL" Name="Depth Format" Kind="InputPin" DefaultValue="None" />
               <Pin Id="BhDnZwpnJ58OtiXdCZrLet" Name="Depth Shared" Kind="InputPin" IsHidden="true" />
@@ -680,6 +682,7 @@
               <Pin Id="AAyjj5Levr8L2Q063J4ssj" Name="Render Format" Kind="InputPin" IsHidden="true" />
               <Pin Id="MkJ99gZOz4NMo9epzdydun" Name="Passes" Kind="InputPin" DefaultValue="ThreePasses" />
               <Pin Id="AYmrbzqiDb9OWcfO9jYRen" Name="Apply" Kind="InputPin" />
+              <Pin Id="Iu0Siw3rjl0Ovn08LncA2S" Name="State Output" Kind="OutputPin" IsHidden="true" />
               <Pin Id="GwfZvxMlfQzOxDT93fVP5g" Name="Output" Kind="OutputPin" />
             </Node>
             <Pad Id="OwenSPzCTsSLkOuWAtC7VD" Comment="Strength" Bounds="746,735,35,15" ShowValueBox="true" isIOBox="true" Value="0.2">
@@ -1292,6 +1295,7 @@
                   <Pin Id="MXnHKQFALwlQC3uIBGtvTu" Name="Size" Kind="InputPin" />
                   <Pin Id="TBnU7cEJNLzOiL14rbCsSr" Name="Render View" Kind="InputPin" />
                   <Pin Id="DTLYbxrlR5IPuMjpH4gXbh" Name="Format" Kind="InputPin" />
+                  <Pin Id="HGjKw3DvGFbOl9ANeXyurf" Name="View Format" Kind="InputPin" />
                   <Pin Id="TFyhERMUmZnMs08XNUrsRf" Name="Color Shared" Kind="InputPin" IsHidden="true" />
                   <Pin Id="BZCEUroKb54PoZQR0PdziN" Name="Depth Format" Kind="InputPin" />
                   <Pin Id="NnGUsVoMmExMbxELmtTaVO" Name="Depth Shared" Kind="InputPin" IsHidden="true" />
@@ -1642,16 +1646,20 @@
                 <Choice Kind="ProcessAppFlag" Name="RenderWindow" />
               </p:NodeReference>
               <Pin Id="AEksjv9BIOWMGLfzZzsf2U" Name="Node Context" Kind="InputPin" />
-              <Pin Id="Dygre8PAOTKP22lfuSaMas" Name="Bounds" Kind="InputPin" DefaultValue="1245.7142, 137.14285, 733.7143, 733.7143" />
+              <Pin Id="Dygre8PAOTKP22lfuSaMas" Name="Bounds" Kind="InputPin" DefaultValue="1245, 257, 733, 733" />
               <Pin Id="PffU8hhiXhHMfFIDZRHpeK" Name="Bound to Document" Kind="InputPin" IsHidden="true" />
               <Pin Id="DUmL8B2s5c7NK0wwO4ZIlj" Name="Dialog If Document Changed" Kind="InputPin" IsHidden="true" />
               <Pin Id="HbgF24wxMXNPBjkU9WzloF" Name="Save Bounds" Kind="InputPin" IsHidden="true" />
+              <Pin Id="UxjyQFcJGBSMnr331ZtKjt" Name="Always On Top" Kind="InputPin" IsHidden="true" />
+              <Pin Id="RwM9AutgphUOD1B579ZVnn" Name="Extend Into Title Bar" Kind="InputPin" IsHidden="true" />
               <Pin Id="DiS4J8A1obHNYlodj1i0Gp" Name="Back Buffer Format" Kind="InputPin" IsHidden="true" />
               <Pin Id="Q0VI6IioUOsQdPE5QnrqLi" Name="Depth Buffer Format" Kind="InputPin" IsHidden="true" />
               <Pin Id="B3bYQjxbT2WP3PzkLjXHSd" Name="Multisample Count" Kind="InputPin" IsHidden="true" />
+              <Pin Id="OyEfa9UwCZLP6PerhMKxZv" Name="Input Priority" Kind="InputPin" IsHidden="true" />
               <Pin Id="J91oHtibKDFPjHniaXO6Sx" Name="Input" Kind="InputPin" />
               <Pin Id="QMMB9YlEGVnLsZUV5FwiIr" Name="Render View" Kind="InputPin" />
               <Pin Id="Ppie98x5hLONLBDBlhWLtc" Name="Title" Kind="InputPin" DefaultValue="Stride" />
+              <Pin Id="TtrlonHJi1bPU2Ye4XPPci" Name="Title Bar Interaction Width" Kind="InputPin" IsHidden="true" />
               <Pin Id="GbP6mD7Lu6TPM9UP5J6JO5" Name="Clear Flags" Kind="InputPin" IsHidden="true" />
               <Pin Id="LshBiRKCPGnMYF2splbHAM" Name="Clear Color" Kind="InputPin" />
               <Pin Id="Js5cq95XZRGPVOiBYAk3IC" Name="Clear Depth" Kind="InputPin" IsHidden="true" />
@@ -1667,6 +1675,9 @@
               <Pin Id="US0KLNJMQkELhE7G7huWTe" Name="Input Source" Kind="OutputPin" />
               <Pin Id="TS8nWs4jWEROAehwLwj50q" Name="Back Buffer" Kind="OutputPin" />
               <Pin Id="LZo8YMxu4eAMaBYIGBIltH" Name="Depth Buffer" Kind="OutputPin" />
+              <Pin Id="SBOU9RQLQNULmVDWj5tKFC" Name="Present Call Intercept" Kind="InputPin" IsHidden="true" />
+              <Pin Id="NX6l6VjNQgaNLsIo0grIVE" Name="Output Color Space" Kind="InputPin" IsHidden="true" />
+              <Pin Id="PMP4eG48KHVMIkvk1hI4uz" Name="Backbuffer Format" Kind="InputPin" IsHidden="true" />
             </Node>
             <Node Bounds="659,593,145,19" Id="Cwb1FIflIfbMqh4h66I6p4">
               <p:NodeReference LastCategoryFullName="Stride.Rendering" LastDependency="VL.Stride.vl">
@@ -1695,6 +1706,7 @@
               <Pin Id="SXGO9sWUsEbOMwshJ6JHKl" Name="Enabled" Kind="InputPin" />
               <Pin Id="OivwQC56O32LgMtdslOnLl" Name="InputSource" Kind="InputPin" />
               <Pin Id="UKsKZhj0cZUN5raEf1YXew" Name="Source" Kind="InputPin" />
+              <Pin Id="SseaOSSpb0oMgI0XpSDY7S" Name="State Output" Kind="OutputPin" IsHidden="true" />
               <Pin Id="LqIsKeD5RszNOFXNjKQ7CF" Name="Output" Kind="OutputPin" />
               <Pin Id="AaEUx3Em6pEPqQRYv5VK8d" Name="Fullscreen" Kind="OutputPin" />
               <Pin Id="MYDLMnnr1b4LOVNU42U22B" Name="Resize" Kind="OutputPin" />
@@ -2049,7 +2061,7 @@
               <Pin Id="K961rNr75L8NeAhez2LL4j" Name="Res" Kind="InputPin" />
               <Pin Id="A1BwAUVWW9NLDO3qOL48p8" Name="Output" Kind="OutputPin" />
             </Node>
-            <ControlPoint Id="BMv7URvUlxfPGDzY0n7pp5" Bounds="277,1362" />
+            <ControlPoint Id="BMv7URvUlxfPGDzY0n7pp5" Bounds="297,1311" />
             <ControlPoint Id="BMlOY7Sah5GQW16ANLIXqI" Bounds="394,470" />
             <Node Bounds="504,560,185,19" Id="JZC2tkpVSeYMFdpl5KjZan">
               <p:NodeReference LastCategoryFullName="Stride.Graphics" LastDependency="VL.Stride.Graphics.Nodes">
@@ -2068,7 +2080,7 @@
               <Pin Id="U6GGhZPxZSCMeu3G5fD0Lw" Name="Compare Function" Kind="InputPin" />
               <Pin Id="MOlSlqzZGHaMMQxZcsddbk" Name="Output" Kind="OutputPin" />
             </Node>
-            <Pad Id="FenpjAHHu2KQIO092fANXG" Comment="Filter" Bounds="506,538,214,15" ShowValueBox="true" isIOBox="true" Value="Point">
+            <Pad Id="FenpjAHHu2KQIO092fANXG" Comment="Filter" Bounds="506,538,216,15" ShowValueBox="true" isIOBox="true" Value="Point">
               <p:TypeAnnotation LastCategoryFullName="Stride.Graphics" LastDependency="Stride.dll">
                 <Choice Kind="TypeFlag" Name="TextureFilter" />
               </p:TypeAnnotation>
@@ -2094,7 +2106,7 @@
               <Pin Id="FaADcMQSiiPNbBL8HywTSv" Name="Input 2" Kind="InputPin" DefaultValue="0.5" />
               <Pin Id="IF14h3KnZx5MbDZDun4kJj" Name="Output" Kind="OutputPin" />
             </Node>
-            <Pad Id="VQDlsXPFSCdNWOg47TjxkF" Comment="" Bounds="415,493,59,15" ShowValueBox="true" isIOBox="true" Value="0.5">
+            <Pad Id="VQDlsXPFSCdNWOg47TjxkF" Comment="" Bounds="415,493,59,15" ShowValueBox="true" isIOBox="true" Value="1">
               <p:TypeAnnotation LastCategoryFullName="Primitive" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="TypeFlag" Name="Float32" />
               </p:TypeAnnotation>
@@ -2187,22 +2199,6 @@
                 <p:buttonmode p:Assembly="VL.UI.Forms" p:Type="VL.HDE.PatchEditor.Editors.ButtonModeEnum">Toggle</p:buttonmode>
               </p:ValueBoxSettings>
             </Pad>
-            <Node Bounds="274,1279,105,19" Id="BsxTE6a40eXPFAKIUUilSX">
-              <p:NodeReference LastCategoryFullName="Stride.Textures.Filter" LastDependency="VL.Stride.TextureFX.vl">
-                <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
-                <Choice Kind="ProcessAppFlag" Name="FXAA" />
-              </p:NodeReference>
-              <Pin Id="PqE5RKCM7t8Nn6saQNw6wh" Name="Node Context" Kind="InputPin" IsHidden="true" />
-              <Pin Id="FGY9dfS0UKvOJYlFqdAqEi" Name="Auto Draw" Kind="InputPin" />
-              <Pin Id="BhfwU0cv6CYQSjkP3N6j84" Name="Input" Kind="InputPin" />
-              <Pin Id="AScNMoPgOn1PAeFBzd7RzV" Name="Size" Kind="InputPin" IsHidden="true" />
-              <Pin Id="QSz8MS0XQDBOksOfWbK1Zd" Name="New Format" Kind="InputPin" />
-              <Pin Id="EW9PdbFoKbfNsZQTSGsvbh" Name="Dither Type" Kind="InputPin" />
-              <Pin Id="LdpEhVEsYm2QKDuVzk3gJM" Name="Input Luminance Alpha" Kind="InputPin" DefaultValue="False" />
-              <Pin Id="KWwLyLMKbHePZIbdfCGPQn" Name="Quality" Kind="InputPin" DefaultValue="5" />
-              <Pin Id="AJcP5pl6FxwNwrMeTh1Hac" Name="Output" Kind="OutputPin" />
-              <Pin Id="TwCclqbrA9iN7Z1M6oyAwd" Name="Renderer" Kind="OutputPin" />
-            </Node>
             <Node Bounds="525,760,63,19" Id="Vf8TVuh6su2N5MTB3CSRDg">
               <p:NodeReference LastCategoryFullName="Animation" LastDependency="VL.CoreLib.vl">
                 <Choice Kind="NodeFlag" Name="Node" Fixed="true" />
@@ -2320,7 +2316,6 @@
           <Link Id="I5nwUO4ZAJeOVvFMG8YPJW" Ids="LSuutk0wpyDLD3fUNHDqca,MurZL3t9V0XQV0lKLbnu14" IsHidden="true" />
           <Link Id="OUxDZOB1PfeLrBIfLmoWt0" Ids="QVrNOMF8xnoNpc3EwHofyw,G4DX50DXGGLOjO7RQ9zCCX" />
           <Link Id="RUB4C8CucZcNJ7R5wJoVAk" Ids="MurZL3t9V0XQV0lKLbnu14,DhMTqRsf7kCPQyVM7fWNb0" />
-          <Link Id="ToSKe2NUKdrQM1twYimcIl" Ids="BSl2fdgGjT0LqSWRSSOO69,BhfwU0cv6CYQSjkP3N6j84" />
           <Link Id="AgQt1kAwjD8LK7eXlt55rh" Ids="QVrNOMF8xnoNpc3EwHofyw,J7wXCAfSiWJNwv9kQF9Iuw" />
           <Link Id="Rjnnye2dy4zLDxWRPDDn4P" Ids="QVrNOMF8xnoNpc3EwHofyw,FmLjhLFnKPNOfoVxM8I6ki" />
           <Link Id="F3GQZipRu3xLZcB6VeBhrB" Ids="QVrNOMF8xnoNpc3EwHofyw,UR4WRcxRk7sQIplkWVjWEP" />
@@ -2329,7 +2324,6 @@
           <Link Id="I897RNAI4bAL6dJCZ3gof4" Ids="NiQKa6fVVJ5QYH6fgHj4Z8,DlGYlhZnpVONF3c2o5FQFK" />
           <Link Id="OEf0XOqKY4MLPEK7Xov2dt" Ids="J7MCCgG0vurPsyywBWZQgC,LBcPQ8NBPmKOaswRe5kCss" />
           <Link Id="CUuGwgD3vMrMCnbRXllJTU" Ids="A1BwAUVWW9NLDO3qOL48p8,BPbIwoiMdhcLDRK56PMzsy" />
-          <Link Id="SP4Cc6KlDY0O1jGPreIKOy" Ids="AJcP5pl6FxwNwrMeTh1Hac,BMv7URvUlxfPGDzY0n7pp5" />
           <Link Id="B6rI4cybpw7QBUzDh68LDR" Ids="IF14h3KnZx5MbDZDun4kJj,HKxxzMWUhqaOZXOV90Gfrx" />
           <Link Id="B8cC560kdXgPvT8LiuLc1d" Ids="DRD2dbSMAfhMZtoyGOGOkU,HbSyO2O5MJLOM1XZd4Vlus" />
           <Link Id="TOU8eL1mrJ1NwPitJUjTJl" Ids="RCDZpr56dj2L2H44fsCxqU,C9es3bYvcm7PWShqaTWRsN" />
@@ -2383,6 +2377,7 @@
           </Patch>
           <Link Id="Lmi1tok8sezPSe96FUtxPa" Ids="HPpfNANTNllNQ5Nn7edHs5,A1PdqdCURI3N3kAFz4z63e" />
           <Link Id="PIvzOb35QPaMxDQ7CVAIUD" Ids="HcikctgeuyEMD8KKuVxe6f,AuSOepoHgVGPUzIZREtbGD" />
+          <Link Id="OYLofMY5LltMJJr8ISAuvz" Ids="BSl2fdgGjT0LqSWRSSOO69,BMv7URvUlxfPGDzY0n7pp5" />
         </Patch>
       </Node>
       <!--
@@ -2406,6 +2401,7 @@
               <Pin Id="BpxJQMIqST9NPmp6s3zbAl" Name="Size" Kind="InputPin" />
               <Pin Id="MomXlP6qxV7OYLgBMPyyZU" Name="Render View" Kind="InputPin" />
               <Pin Id="SOPBJ8SUMmdP8WPMcDvBIG" Name="Format" Kind="InputPin" />
+              <Pin Id="PlyHU3cpzvIOELoXxCDt4B" Name="View Format" Kind="InputPin" />
               <Pin Id="KpTctIyDr3ANA4dmyWOZlA" Name="Color Shared" Kind="InputPin" IsHidden="true" />
               <Pin Id="Rwtxq7Wh27mOrsF7v55ctz" Name="Depth Format" Kind="InputPin" DefaultValue="None" />
               <Pin Id="QR4hgbBWeeRL8dt57zcQpa" Name="Depth Shared" Kind="InputPin" IsHidden="true" />
@@ -2434,6 +2430,7 @@
               <Pin Id="UPCbuwsaxGhP666UnxagAw" Name="Size" Kind="InputPin" />
               <Pin Id="QIsJ29wurXfPBlt6Qc05c2" Name="Render View" Kind="InputPin" />
               <Pin Id="O1ep3QbISJbORv2ZafLIZw" Name="Format" Kind="InputPin" />
+              <Pin Id="HXteQmX0JhUPRtx3Ycc5Lr" Name="View Format" Kind="InputPin" />
               <Pin Id="HtiXcq3zQ9oLCjnCpNP2hj" Name="Color Shared" Kind="InputPin" IsHidden="true" />
               <Pin Id="AJqLfs4E1V7MFOEnXBDBOf" Name="Depth Format" Kind="InputPin" DefaultValue="None" />
               <Pin Id="Jbugla8RxyyO1R46QK6tXf" Name="Depth Shared" Kind="InputPin" IsHidden="true" />
@@ -2501,11 +2498,11 @@
       </Patch>
     </Node>
   </Patch>
-  <NugetDependency Id="HIso4iDRN4iNSZxOaP0H2p" Location="VL.CoreLib" Version="2024.6.0-0261-g38f7059b02" />
-  <NugetDependency Id="CEszKi4CR48LXWCFc4Kevs" Location="VL.Stride" Version="2024.6.0-0261-g38f7059b02" />
-  <NugetDependency Id="QKt8dsFfXgNPAG8pqrdHFr" Location="VL.Skia" Version="2024.6.0-0261-g38f7059b02" />
-  <NugetDependency Id="IbDSUNiaLrHP34lXamuppu" Location="System.Drawing.Common" Version="8.0.0" />
+  <NugetDependency Id="HIso4iDRN4iNSZxOaP0H2p" Location="VL.CoreLib" Version="2025.7.1-0174-g187f627d60" />
+  <NugetDependency Id="CEszKi4CR48LXWCFc4Kevs" Location="VL.Stride" Version="2025.7.1-0174-g187f627d60" />
+  <NugetDependency Id="QKt8dsFfXgNPAG8pqrdHFr" Location="VL.Skia" Version="2025.7.1-0174-g187f627d60" />
+  <NugetDependency Id="IbDSUNiaLrHP34lXamuppu" Location="System.Drawing.Common" Version="8.0.1" />
   <PlatformDependency Id="JHS49jB9PQmN0zM3vO19id" Location="System.Drawing" />
   <PlatformDependency Id="CXUy1IRQsb7LoaL6Gtrxjx" Location="System" />
-  <NugetDependency Id="DstPAEzW9cQNtFoxDglC26" Location="VL.Stride.TextureFX" Version="2024.6.0-0261-g38f7059b02" />
+  <NugetDependency Id="DstPAEzW9cQNtFoxDglC26" Location="VL.Stride.TextureFX" Version="2025.7.1-0174-g187f627d60" />
 </Document>
