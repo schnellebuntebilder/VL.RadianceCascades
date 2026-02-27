@@ -91,20 +91,43 @@ shader RCUnity_TextureFX : TextureFX
         // Early-out debug modes
         if (DebugMode == 1)
         {
-            // Show raw Texture2 at this pixel's own UV — does the parent already have bleeding?
+            // Show raw Texture2 at this pixel's own UV
             return Texture2.SampleLevel(ClampPointSampler, streams.TexCoord, 0);
         }
         if (DebugMode == 2)
         {
-            // Show rayOrigin — should be smooth gradient from 0 to 1 within each block
+            // Show rayOrigin — should be smooth gradient 0..1 within each block
             float2 rayOrig = (coordsInBlock + 0.5) * float(blockSqrt) / R;
             return float4(rayOrig, 0, 1);
         }
         if (DebugMode == 3)
         {
             // Show ray range for this cascade level
-            float2 range = CalculateRayRange(CascadeLevel, NumCascades);
-            return float4(range.x, range.y, 0, 1);
+            float2 rng = CalculateRayRange(CascadeLevel, NumCascades);
+            return float4(rng.x, rng.y, 0, 1);
+        }
+        if (DebugMode == 4)
+        {
+            // Show blockIndex as hue per block
+            return float4(block2DIndex.x / float(blockSqrt), block2DIndex.y / float(blockSqrt), float(CascadeLevel) / float(NumCascades), 1);
+        }
+        if (DebugMode == 5)
+        {
+            // Show coordsInBlock normalized — should be smooth 0..1 gradient in each block
+            return float4(coordsInBlock / blockDim, 0, 1);
+        }
+        if (DebugMode == 6)
+        {
+            // Show Texture2 at the MERGE UV for first direction only
+            float2 position = coordsInBlock * 0.5 + 0.25;
+            float firstAngleIndex = blockIndex * 4.0;
+            float2 positionOffset = float2(
+                fmod(firstAngleIndex, float(blockSqrt * 2)),
+                floor(firstAngleIndex / float(blockSqrt * 2))
+            );
+            position = clamp(position, 0.5, blockDim * 0.5 - 0.5);
+            float2 mergeUV = (position + positionOffset * blockDim * 0.5) / R;
+            return Texture2.SampleLevel(ClampPointSampler, mergeUV, 0);
         }
 
         float4 finalResult = float4(0, 0, 0, 0);
