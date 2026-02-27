@@ -29,6 +29,7 @@ shader RCGMShaders_TextureFX : TextureFX
     int MarchSteps = 64;
     float AngleJitter = 0.0;
     int MergeMode = 0; // 0=standard, 1=interlaced (fast, dithered), 2=bilinear (best quality, 4x cost)
+    float LightFalloff = 1.0; // Controls how quickly light fades with distance (higher = shorter range)
 
     #define TAU 6.28318530718
     #define EPS 0.0001
@@ -71,7 +72,8 @@ shader RCGMShaders_TextureFX : TextureFX
             if (df < EPS)
             {
                 float3 col = Texture0.SampleLevel(ClampLinearSampler, ray, 0).rgb;
-                return float4(col, 0.0);
+                float attenuation = 1.0 / (1.0 + LightFalloff * rd * rd / (R.x * R.x));
+                return float4(col * attenuation, 0.0);
             }
         }
 
